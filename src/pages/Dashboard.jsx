@@ -94,7 +94,7 @@ function AdminLoginForm({ onLogin }) {
           </form>
 
           <p className="mt-6 text-center text-xs text-rose-400">
-            <Link to="/enter" className="underline hover:text-rose-600">
+            <Link to="/" className="underline hover:text-rose-600">
               الذهاب لصفحة الزائر
             </Link>
           </p>
@@ -266,7 +266,7 @@ export default function Dashboard() {
         return (
           <Section
             title="صفحة دخول الزائر"
-            description="النصوص التي تظهر عند فتح الهدية (/enter)"
+            description="النصوص التي تظهر عند فتح الهدية (الصفحة الرئيسية)"
           >
             {[
               ['eyebrow', 'العنوان الصغير'],
@@ -627,8 +627,8 @@ export default function Dashboard() {
 
         <p className="mt-8 text-center text-xs text-rose-400">
           رابط الزائر:{' '}
-          <Link to="/enter" className="underline">
-            /enter
+          <Link to="/" className="underline">
+            الدومين الرئيسي
           </Link>
         </p>
       </div>

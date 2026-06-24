@@ -11,8 +11,9 @@ import Welcome from './pages/Welcome'
 export default function App() {
   return (
     <Routes>
+      <Route path="/" element={<Enter />} />
+      <Route path="/enter" element={<Navigate to="/" replace />} />
       <Route path="/login" element={<Dashboard />} />
-      <Route path="/enter" element={<Enter />} />
 
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
@@ -23,8 +24,7 @@ export default function App() {
         </Route>
       </Route>
 
-      <Route path="/" element={<Navigate to="/enter" replace />} />
-      <Route path="*" element={<Navigate to="/enter" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }

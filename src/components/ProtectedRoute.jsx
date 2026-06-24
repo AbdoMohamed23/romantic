@@ -8,7 +8,7 @@ export default function ProtectedRoute() {
   if (!isAuthenticated) {
     return (
       <Navigate
-        to="/enter"
+        to="/"
         replace
         state={{ from: location.pathname }}
       />
