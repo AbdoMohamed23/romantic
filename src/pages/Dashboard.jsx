@@ -22,7 +22,7 @@ import {
   TextInput,
 } from '../components/dashboard/DashboardFields'
 import { useContent } from '../context/ContentContext'
-import { useAdminAuth } from '../hooks/useAuth'
+import { useAdminAuth, grantVisitorPreviewAccess } from '../hooks/useAuth'
 
 const TABS = [
   { id: 'general', label: 'عام', icon: KeyRound },
@@ -140,7 +140,7 @@ export default function Dashboard() {
   }
 
   const handlePreview = () => {
-    localStorage.setItem('romantic-site-authenticated', 'true')
+    grantVisitorPreviewAccess()
     window.open('/welcome', '_blank')
   }
 
@@ -553,9 +553,9 @@ export default function Dashboard() {
               {savedFlash ? '✓ تم الحفظ تلقائياً' : 'التغييرات تُحفظ فوراً'}
               {isSupabaseConfigured ? (
                 <span className="mt-1 block text-xs">
-                  {syncStatus === 'loading' && '⏳ جاري الاتصال بـ Supabase...'}
-                  {syncStatus === 'cloud' && '☁️ متصل بـ Supabase'}
-                  {syncStatus === 'local' && '💾 محلي فقط — تحقق من الإعدادات'}
+                  {syncStatus === 'loading' && '⏳ جاري التحميل من Supabase...'}
+                  {syncStatus === 'cloud' && '☁️ المحتوى من Supabase'}
+                  {syncStatus === 'error' && '⚠️ مشكلة في الاتصال'}
                   {syncError ? ` — ${syncError}` : ''}
                 </span>
               ) : (

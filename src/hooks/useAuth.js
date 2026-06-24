@@ -5,12 +5,12 @@ import { setAdminPasswordForSync } from '../utils/supabaseContent'
 const ADMIN_KEY = config.auth.adminStorageKey
 const VISITOR_KEY = config.auth.storageKey
 
-function readKey(key, storage = localStorage) {
-  return storage.getItem(key) === 'true'
+function readKey(key) {
+  return sessionStorage.getItem(key) === 'true'
 }
 
 export function useAdminAuth() {
-  const [isAdmin, setIsAdmin] = useState(() => readKey(ADMIN_KEY, sessionStorage))
+  const [isAdmin, setIsAdmin] = useState(() => readKey(ADMIN_KEY))
 
   const adminLoginWithPassword = useCallback((password) => {
     setAdminPasswordForSync(password)
@@ -28,19 +28,19 @@ export function useAdminAuth() {
 }
 
 export function checkAdminAuth() {
-  return readKey(ADMIN_KEY, sessionStorage)
+  return readKey(ADMIN_KEY)
 }
 
 export function useAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => readKey(VISITOR_KEY))
 
   const login = useCallback(() => {
-    localStorage.setItem(VISITOR_KEY, 'true')
+    sessionStorage.setItem(VISITOR_KEY, 'true')
     setIsAuthenticated(true)
   }, [])
 
   const logout = useCallback(() => {
-    localStorage.removeItem(VISITOR_KEY)
+    sessionStorage.removeItem(VISITOR_KEY)
     setIsAuthenticated(false)
   }, [])
 
@@ -49,4 +49,8 @@ export function useAuth() {
 
 export function checkAuth() {
   return readKey(VISITOR_KEY)
+}
+
+export function grantVisitorPreviewAccess() {
+  sessionStorage.setItem(VISITOR_KEY, 'true')
 }

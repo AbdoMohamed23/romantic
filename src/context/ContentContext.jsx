@@ -4,24 +4,15 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react'
 import { defaultContent } from '../data/defaultContent'
 import { musicAsset } from '../data/musicAsset'
 import { isSupabaseConfigured } from '../lib/supabase'
+import { getSeedContent, nextMemoryId } from '../utils/contentMerge'
 import {
-  fileToDataUrl,
-  loadContent,
-  nextMemoryId,
-  resetStoredContent,
-  saveContent,
-} from '../utils/contentStorage'
-import {
-  cacheContentLocally,
-  fetchRemoteContent,
   getAdminPasswordForSync,
-  migrateLocalToRemote,
+  loadSiteContent,
   pushContentToCloud,
   saveRemoteContent,
   uploadAsset,
@@ -30,85 +21,76 @@ import {
 const ContentContext = createContext(null)
 
 function resolveMusicSrc(content) {
-  if (content.music.src?.startsWith('data:')) return content.music.src
   if (content.music.src?.startsWith('http')) return content.music.src
-  return musicAsset || content.music.src || ''
+  return musicAsset || ''
 }
 
 export function ContentProvider({ children }) {
-  const [content, setContent] = useState(loadContent)
+  const [content, setContent] = useState(() => getSeedContent())
+  const [isLoading, setIsLoading] = useState(isSupabaseConfigured)
   const [syncStatus, setSyncStatus] = useState(
-    isSupabaseConfigured ? 'loading' : 'local',
+    isSupabaseConfigured ? 'loading' : 'error',
   )
-  const [syncError, setSyncError] = useState('')
-  const initialLoadDone = useRef(false)
+  const [syncError, setSyncError] = useState(
+    isSupabaseConfigured ? '' : 'Supabase غير مُعدّ — أضف متغيرات البيئة على Vercel',
+  )
 
   useEffect(() => {
-    if (!isSupabaseConfigured || initialLoadDone.current) return
+    if (!isSupabaseConfigured) return
 
     let cancelled = false
 
-    async function loadRemote() {
+    async function load() {
       try {
-        const remote = await fetchRemoteContent()
-        if (cancelled) return
-
-        if (remote) {
+        const remote = await loadSiteContent()
+        if (!cancelled) {
           setContent(remote)
-          cacheContentLocally(remote)
           setSyncStatus('cloud')
-        } else {
-          const password = getAdminPasswordForSync()
-          if (password) {
-            const migrated = await migrateLocalToRemote(password)
-            if (!cancelled) {
-              setContent(migrated)
-              cacheContentLocally(migrated)
-            }
-          }
-          setSyncStatus('cloud')
+          setSyncError('')
         }
-        setSyncError('')
       } catch (error) {
         if (!cancelled) {
-          setSyncStatus('local')
-          setSyncError(error.message || 'تعذّر الاتصال بـ Supabase')
+          setSyncStatus('error')
+          setSyncError(error.message || 'تعذّر تحميل المحتوى من Supabase')
         }
       } finally {
-        initialLoadDone.current = true
+        if (!cancelled) setIsLoading(false)
       }
     }
 
-    loadRemote()
+    load()
     return () => {
       cancelled = true
     }
   }, [])
 
   const persist = useCallback(async (next) => {
-    setContent(next)
-    cacheContentLocally(next)
+    if (!isSupabaseConfigured) {
+      setSyncError('Supabase غير مُعدّ — لا يمكن الحفظ')
+      return
+    }
 
-    if (!isSupabaseConfigured) return
+    const password = getAdminPasswordForSync()
+    if (!password) {
+      setSyncError('سجّل دخول الداشبورد لحفظ التغييرات')
+      return
+    }
+
+    setContent(next)
 
     try {
-      const password = getAdminPasswordForSync()
-      if (!password) {
-        setSyncStatus('local')
-        setSyncError('سجّل دخول الداشبورد لحفظ التغييرات على السحابة')
-        return
-      }
-
-      await saveRemoteContent(next, password)
+      const saved = await saveRemoteContent(next, password)
+      setContent(saved)
       setSyncStatus('cloud')
       setSyncError('')
     } catch (error) {
-      setSyncStatus('local')
+      setSyncStatus('error')
       setSyncError(
         error.message === 'invalid_password'
-          ? 'كلمة المرور غير صحيحة للحفظ على السحابة'
+          ? 'كلمة المرور غير صحيحة'
           : error.message || 'فشل الحفظ على Supabase',
       )
+      throw error
     }
   }, [])
 
@@ -191,28 +173,29 @@ export function ContentProvider({ children }) {
     [content, persist],
   )
 
-  const syncToCloud = useCallback(async (password = getAdminPasswordForSync()) => {
-    if (!isSupabaseConfigured || !password) return false
+  const syncToCloud = useCallback(
+    async (password = getAdminPasswordForSync()) => {
+      if (!isSupabaseConfigured || !password) return false
 
-    try {
-      await pushContentToCloud(content, password)
-      setSyncStatus('cloud')
-      setSyncError('')
-      return true
-    } catch (error) {
-      setSyncStatus('local')
-      setSyncError(error.message || 'فشل المزامنة مع Supabase')
-      return false
-    }
-  }, [content])
+      try {
+        const saved = await pushContentToCloud(content, password)
+        setContent(saved)
+        setSyncStatus('cloud')
+        setSyncError('')
+        return true
+      } catch (error) {
+        setSyncStatus('error')
+        setSyncError(error.message || 'فشل المزامنة مع Supabase')
+        return false
+      }
+    },
+    [content],
+  )
 
   const uploadMemoryImage = useCallback(
     async (id, file) => {
       try {
-        const image = isSupabaseConfigured
-          ? await uploadAsset(file, 'memories')
-          : await fileToDataUrl(file)
-
+        const image = await uploadAsset(file, 'memories')
         await persist({
           ...content,
           memories: content.memories.map((memory) =>
@@ -230,24 +213,12 @@ export function ContentProvider({ children }) {
   const uploadMusic = useCallback(
     async (file) => {
       try {
-        if (isSupabaseConfigured) {
-          const url = await uploadAsset(file, 'music')
-          await persist({
-            ...content,
-            music: {
-              ...content.music,
-              src: url,
-              fileName: file.name,
-            },
-          })
-          return
-        }
-        const dataUrl = await fileToDataUrl(file)
+        const url = await uploadAsset(file, 'music')
         await persist({
           ...content,
           music: {
             ...content.music,
-            src: dataUrl,
+            src: url,
             fileName: file.name,
           },
         })
@@ -259,12 +230,24 @@ export function ContentProvider({ children }) {
     [content, persist],
   )
 
-  const resetToDefaults = useCallback(() => {
+  const resetToDefaults = useCallback(async () => {
     const next = structuredClone(defaultContent)
-    resetStoredContent()
-    setContent(next)
-    persist(next)
-  }, [persist])
+    const password = getAdminPasswordForSync()
+    if (!password) {
+      setSyncError('سجّل دخول الداشبورد أولاً')
+      return
+    }
+
+    try {
+      const saved = await saveRemoteContent(next, password)
+      setContent(saved)
+      setSyncStatus('cloud')
+      setSyncError('')
+    } catch (error) {
+      setSyncStatus('error')
+      setSyncError(error.message || 'فشل استعادة الإعدادات الافتراضية')
+    }
+  }, [])
 
   const musicSrc = resolveMusicSrc(content)
 
@@ -272,6 +255,7 @@ export function ContentProvider({ children }) {
     () => ({
       content,
       musicSrc,
+      isLoading,
       syncStatus,
       syncError,
       isSupabaseConfigured,
@@ -290,6 +274,7 @@ export function ContentProvider({ children }) {
     [
       content,
       musicSrc,
+      isLoading,
       syncStatus,
       syncError,
       updateField,

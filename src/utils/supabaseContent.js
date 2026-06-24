@@ -1,6 +1,5 @@
 import { ASSETS_BUCKET, isSupabaseConfigured, supabase } from '../lib/supabase'
-import { defaultContent } from '../data/defaultContent'
-import { mergeContent, saveContent as saveLocalContent } from './contentStorage'
+import { getSeedContent, mergeContent } from './contentMerge'
 
 const ADMIN_PASSWORD_KEY = 'romantic-site-admin-password'
 
@@ -21,34 +20,38 @@ function stripHeavyFields(content) {
     ...content,
     music: {
       ...content.music,
-      src:
-        content.music.src?.startsWith('data:') || content.music.src?.startsWith('http')
-          ? content.music.src
-          : '',
+      src: content.music.src?.startsWith('http') ? content.music.src : '',
     },
     memories: content.memories.map((memory) => ({
       ...memory,
-      image:
-        memory.image?.startsWith('data:') || memory.image?.startsWith('http')
-          ? memory.image
-          : '',
+      image: memory.image?.startsWith('http') ? memory.image : '',
     })),
   }
 }
 
+function isEmptyRemotePayload(data) {
+  return !data || typeof data !== 'object' || Object.keys(data).length === 0
+}
+
 export async function fetchRemoteContent() {
-  if (!isSupabaseConfigured || !supabase) return null
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Supabase غير مُعدّ — أضف VITE_SUPABASE_URL و VITE_SUPABASE_ANON_KEY')
+  }
 
   const { data, error } = await supabase.rpc('get_site_content')
   if (error) throw error
 
-  const payload = data && typeof data === 'object' && Object.keys(data).length > 0 ? data : null
-  return payload ? mergeContent(payload) : null
+  if (isEmptyRemotePayload(data)) return null
+  return mergeContent(data)
 }
 
-export async function saveRemoteContent(content, password = getAdminPasswordForSync()) {
-  if (!isSupabaseConfigured || !supabase) return false
-  if (!password) return false
+export async function saveRemoteContent(content, password) {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Supabase غير مُعدّ')
+  }
+  if (!password) {
+    throw new Error('كلمة المرور مطلوبة للحفظ')
+  }
 
   const payload = stripHeavyFields(content)
   const { error } = await supabase.rpc('save_site_content', {
@@ -63,7 +66,20 @@ export async function saveRemoteContent(content, password = getAdminPasswordForS
     throw error
   }
 
-  return true
+  return mergeContent(payload)
+}
+
+export async function seedRemoteContentIfEmpty() {
+  const existing = await fetchRemoteContent()
+  if (existing) return existing
+
+  const seed = getSeedContent()
+  await saveRemoteContent(seed, seed.password)
+  return mergeContent(seed)
+}
+
+export async function loadSiteContent() {
+  return (await fetchRemoteContent()) ?? seedRemoteContentIfEmpty()
 }
 
 function guessMimeType(file) {
@@ -86,7 +102,9 @@ function guessMimeType(file) {
 }
 
 export async function uploadAsset(file, folder) {
-  if (!isSupabaseConfigured || !supabase) return null
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Supabase غير مُعدّ — لا يمكن رفع الملفات')
+  }
 
   const extension = file.name.split('.').pop()?.toLowerCase() || 'bin'
   const path = `${folder}/${crypto.randomUUID()}.${extension}`
@@ -105,18 +123,5 @@ export async function uploadAsset(file, folder) {
 }
 
 export async function pushContentToCloud(content, password) {
-  await saveRemoteContent(content, password)
-  cacheContentLocally(content)
-  return content
-}
-
-export async function migrateLocalToRemote(password) {
-  const raw = localStorage.getItem('romantic-site-content')
-  const local = raw ? mergeContent(JSON.parse(raw)) : structuredClone(defaultContent)
-  await saveRemoteContent(local, password)
-  return local
-}
-
-export function cacheContentLocally(content) {
-  saveLocalContent(content)
+  return saveRemoteContent(content, password)
 }

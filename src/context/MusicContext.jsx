@@ -8,7 +8,7 @@ const PENDING_KEY = config.music.pendingStartKey
 const MusicContext = createContext(null)
 
 function readMusicPreference() {
-  const stored = localStorage.getItem(MUSIC_KEY)
+  const stored = sessionStorage.getItem(MUSIC_KEY)
   return stored === null ? null : stored === 'true'
 }
 
@@ -25,7 +25,7 @@ export function MusicProvider({ children }) {
   }, [musicSrc])
 
   const persistPreference = useCallback((playing) => {
-    localStorage.setItem(MUSIC_KEY, String(playing))
+    sessionStorage.setItem(MUSIC_KEY, String(playing))
     setIsPlaying(playing)
   }, [])
 
@@ -62,7 +62,7 @@ export function MusicProvider({ children }) {
 
   const requestMusicStart = useCallback(() => {
     sessionStorage.setItem(PENDING_KEY, 'true')
-    localStorage.setItem(MUSIC_KEY, 'true')
+    sessionStorage.setItem(MUSIC_KEY, 'true')
     setIsPlaying(true)
   }, [])
 
