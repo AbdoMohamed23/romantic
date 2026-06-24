@@ -35,6 +35,7 @@ export function mergeContent(stored) {
     gallery: mergeSection(defaultContent.gallery, stored.gallery),
     final: mergeSection(defaultContent.final, stored.final),
     memories: stored.memories?.length ? stored.memories : defaultContent.memories,
+    galleryItems: Array.isArray(stored.galleryItems) ? stored.galleryItems : [],
   }
 }
 
@@ -42,6 +43,6 @@ export function getSeedContent() {
   return structuredClone(defaultContent)
 }
 
-export function nextMemoryId(memories) {
-  return memories.reduce((max, item) => Math.max(max, item.id), 0) + 1
+export function nextItemId(items) {
+  return items.reduce((max, item) => Math.max(max, item.id), 0) + 1
 }

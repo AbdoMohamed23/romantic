@@ -30,7 +30,7 @@ const TABS = [
   { id: 'login', label: 'صفحة الدخول', icon: Heart },
   { id: 'welcome', label: 'الترحيب', icon: Sparkles },
   { id: 'story', label: 'القصة', icon: Calendar },
-  { id: 'memories', label: 'الذكريات', icon: Image },
+  { id: 'memories', label: 'ذكريات القصة', icon: Calendar },
   { id: 'gallery', label: 'المعرض', icon: Image },
   { id: 'final', label: 'الصفحة الأخيرة', icon: Heart },
 ]
@@ -119,7 +119,11 @@ export default function Dashboard() {
     updateMemory,
     addMemory,
     removeMemory,
+    updateGalleryItem,
+    addGalleryItem,
+    removeGalleryItem,
     uploadMemoryImage,
+    uploadGalleryImage,
     uploadMusic,
     resetToDefaults,
     syncToCloud,
@@ -424,7 +428,7 @@ export default function Dashboard() {
               />
             </Field>
             <p className="text-xs text-rose-400">
-              صور ونصوص الذكريات في تبويب «الذكريات» — تظهر في القصة والمعرض معاً.
+              ذكريات القصة تظهر في صفحة Our Story فقط — صور الألبوم في تبويب المعرض.
             </p>
           </Section>
         )
@@ -432,8 +436,8 @@ export default function Dashboard() {
       case 'memories':
         return (
           <Section
-            title="الذكريات"
-            description="كل ذكرى: صورة + تاريخ + نص — تُستخدم في القصة والمعرض"
+            title="ذكريات القصة"
+            description="نص + تاريخ في خط الزمن — صفحة Our Story فقط"
           >
             <div className="space-y-4">
               {content.memories.map((memory, index) => (
@@ -441,6 +445,8 @@ export default function Dashboard() {
                   key={memory.id}
                   memory={memory}
                   index={index}
+                  itemLabel="ذكرى"
+                  imageHint="صورة اختيارية (تُضغط تلقائياً)"
                   onChange={(id, patch) => {
                     updateMemory(id, patch)
                     flashSaved()
@@ -461,42 +467,82 @@ export default function Dashboard() {
               }}
               className="w-full rounded-xl border border-dashed border-rose-200 py-3 text-sm font-medium text-rose-500 transition hover:border-rose-300 hover:bg-rose-50"
             >
-              + إضافة ذكرى جديدة
+              + إضافة ذكرى للقصة
             </button>
           </Section>
         )
 
       case 'gallery':
         return (
-          <Section title="صفحة المعرض" description="عناوين صفحة الألبوم">
-            <Field label="العنوان الصغير">
-              <TextInput
-                value={content.gallery.eyebrow}
-                onChange={(v) => {
-                  updateField('gallery', 'eyebrow', v)
+          <>
+            <Section title="عناوين المعرض" description="نصوص صفحة الألبوم">
+              <Field label="العنوان الصغير">
+                <TextInput
+                  value={content.gallery.eyebrow}
+                  onChange={(v) => {
+                    updateField('gallery', 'eyebrow', v)
+                    flashSaved()
+                  }}
+                />
+              </Field>
+              <Field label="العنوان الرئيسي">
+                <TextInput
+                  value={content.gallery.title}
+                  onChange={(v) => {
+                    updateField('gallery', 'title', v)
+                    flashSaved()
+                  }}
+                />
+              </Field>
+              <Field label="زر التالي">
+                <TextInput
+                  value={content.gallery.finalButton}
+                  onChange={(v) => {
+                    updateField('gallery', 'finalButton', v)
+                    flashSaved()
+                  }}
+                />
+              </Field>
+            </Section>
+
+            <div className="mt-4">
+            <Section
+              title="صور الألبوم"
+              description="صورة + تاريخ + وصف — صفحة المعرض فقط (تُضغط تلقائياً عند الرفع)"
+            >
+              <div className="space-y-4">
+                {(content.galleryItems ?? []).map((item, index) => (
+                  <MemoryEditor
+                    key={item.id}
+                    memory={item}
+                    index={index}
+                    itemLabel="صورة"
+                    imageHint="رفع صورة"
+                    onChange={(id, patch) => {
+                      updateGalleryItem(id, patch)
+                      flashSaved()
+                    }}
+                    onImageUpload={(id, file) => {
+                      uploadGalleryImage(id, file).then(flashSaved)
+                    }}
+                    onRemove={removeGalleryItem}
+                    canRemove={(content.galleryItems ?? []).length > 0}
+                  />
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  addGalleryItem()
                   flashSaved()
                 }}
-              />
-            </Field>
-            <Field label="العنوان الرئيسي">
-              <TextInput
-                value={content.gallery.title}
-                onChange={(v) => {
-                  updateField('gallery', 'title', v)
-                  flashSaved()
-                }}
-              />
-            </Field>
-            <Field label="زر التالي">
-              <TextInput
-                value={content.gallery.finalButton}
-                onChange={(v) => {
-                  updateField('gallery', 'finalButton', v)
-                  flashSaved()
-                }}
-              />
-            </Field>
-          </Section>
+                className="w-full rounded-xl border border-dashed border-rose-200 py-3 text-sm font-medium text-rose-500 transition hover:border-rose-300 hover:bg-rose-50"
+              >
+                + إضافة صورة للمعرض
+              </button>
+            </Section>
+            </div>
+          </>
         )
 
       case 'final':

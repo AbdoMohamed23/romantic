@@ -27,7 +27,7 @@ export default function Layout() {
             paddingBottom: 'calc(6.5rem + env(safe-area-inset-bottom))',
           }}
         >
-          <AnimatePresence mode="wait">
+          <AnimatePresence initial={false}>
             <PageTransition key={location.pathname}>
               <Outlet />
             </PageTransition>

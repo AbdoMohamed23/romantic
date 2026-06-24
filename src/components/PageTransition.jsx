@@ -4,24 +4,9 @@ import { config } from '../data/config'
 const { page } = config.animations
 
 const pageVariants = {
-  initial: {
-    opacity: 0,
-    y: 28,
-    scale: 0.97,
-    filter: 'blur(6px)',
-  },
-  animate: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    filter: 'blur(0px)',
-  },
-  exit: {
-    opacity: 0,
-    y: -20,
-    scale: 1.02,
-    filter: 'blur(4px)',
-  },
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -8 },
 }
 
 export default function PageTransition({ children }) {

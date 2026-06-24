@@ -1,4 +1,5 @@
 import { ASSETS_BUCKET, isSupabaseConfigured, supabase } from '../lib/supabase'
+import { compressImageFile } from './compressImage'
 import { getSeedContent, mergeContent } from './contentMerge'
 
 const ADMIN_PASSWORD_KEY = 'romantic-site-admin-password'
@@ -15,16 +16,24 @@ export function getAdminPasswordForSync() {
   return sessionStorage.getItem(ADMIN_PASSWORD_KEY) || ''
 }
 
+function stripUrlField(value) {
+  return value?.startsWith('http') ? value : ''
+}
+
 function stripHeavyFields(content) {
   return {
     ...content,
     music: {
       ...content.music,
-      src: content.music.src?.startsWith('http') ? content.music.src : '',
+      src: stripUrlField(content.music.src),
     },
     memories: content.memories.map((memory) => ({
       ...memory,
-      image: memory.image?.startsWith('http') ? memory.image : '',
+      image: stripUrlField(memory.image),
+    })),
+    galleryItems: (content.galleryItems ?? []).map((item) => ({
+      ...item,
+      image: stripUrlField(item.image),
     })),
   }
 }
@@ -35,7 +44,7 @@ function isEmptyRemotePayload(data) {
 
 export async function fetchRemoteContent() {
   if (!isSupabaseConfigured || !supabase) {
-    throw new Error('Supabase غير مُعدّ — أضف VITE_SUPABASE_URL و VITE_SUPABASE_ANON_KEY')
+    throw new Error('تعذّر الاتصال بالخادم')
   }
 
   const { data, error } = await supabase.rpc('get_site_content')
@@ -47,7 +56,7 @@ export async function fetchRemoteContent() {
 
 export async function saveRemoteContent(content, password) {
   if (!isSupabaseConfigured || !supabase) {
-    throw new Error('Supabase غير مُعدّ')
+    throw new Error('تعذّر الاتصال بالخادم')
   }
   if (!password) {
     throw new Error('كلمة المرور مطلوبة للحفظ')
@@ -103,15 +112,19 @@ function guessMimeType(file) {
 
 export async function uploadAsset(file, folder) {
   if (!isSupabaseConfigured || !supabase) {
-    throw new Error('Supabase غير مُعدّ — لا يمكن رفع الملفات')
+    throw new Error('تعذّر رفع الملف')
   }
 
-  const extension = file.name.split('.').pop()?.toLowerCase() || 'bin'
-  const path = `${folder}/${crypto.randomUUID()}.${extension}`
-  const contentType = guessMimeType(file)
+  const prepared = file.type?.startsWith('image/')
+    ? await compressImageFile(file)
+    : file
 
-  const { error } = await supabase.storage.from(ASSETS_BUCKET).upload(path, file, {
-    cacheControl: '3600',
+  const extension = prepared.name.split('.').pop()?.toLowerCase() || 'bin'
+  const path = `${folder}/${crypto.randomUUID()}.${extension}`
+  const contentType = guessMimeType(prepared)
+
+  const { error } = await supabase.storage.from(ASSETS_BUCKET).upload(path, prepared, {
+    cacheControl: '31536000',
     upsert: true,
     contentType,
   })

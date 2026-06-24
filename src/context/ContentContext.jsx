@@ -9,7 +9,7 @@ import {
 import { defaultContent } from '../data/defaultContent'
 import { musicAsset } from '../data/musicAsset'
 import { isSupabaseConfigured } from '../lib/supabase'
-import { getSeedContent, nextMemoryId } from '../utils/contentMerge'
+import { getSeedContent, nextItemId } from '../utils/contentMerge'
 import {
   getAdminPasswordForSync,
   loadSiteContent,
@@ -32,7 +32,7 @@ export function ContentProvider({ children }) {
     isSupabaseConfigured ? 'loading' : 'error',
   )
   const [syncError, setSyncError] = useState(
-    isSupabaseConfigured ? '' : 'Supabase غير مُعدّ — أضف متغيرات البيئة على Vercel',
+    isSupabaseConfigured ? '' : 'تعذّر الاتصال بالخادم',
   )
 
   useEffect(() => {
@@ -153,7 +153,7 @@ export function ContentProvider({ children }) {
   )
 
   const addMemory = useCallback(() => {
-    const id = nextMemoryId(content.memories)
+    const id = nextItemId(content.memories)
     persist({
       ...content,
       memories: [
@@ -168,6 +168,39 @@ export function ContentProvider({ children }) {
       persist({
         ...content,
         memories: content.memories.filter((memory) => memory.id !== id),
+      })
+    },
+    [content, persist],
+  )
+
+  const updateGalleryItem = useCallback(
+    (id, patch) => {
+      persist({
+        ...content,
+        galleryItems: (content.galleryItems ?? []).map((item) =>
+          item.id === id ? { ...item, ...patch } : item,
+        ),
+      })
+    },
+    [content, persist],
+  )
+
+  const addGalleryItem = useCallback(() => {
+    const id = nextItemId(content.galleryItems ?? [])
+    persist({
+      ...content,
+      galleryItems: [
+        ...(content.galleryItems ?? []),
+        { id, image: '', date: '', text: '' },
+      ],
+    })
+  }, [content, persist])
+
+  const removeGalleryItem = useCallback(
+    (id) => {
+      persist({
+        ...content,
+        galleryItems: (content.galleryItems ?? []).filter((item) => item.id !== id),
       })
     },
     [content, persist],
@@ -195,11 +228,29 @@ export function ContentProvider({ children }) {
   const uploadMemoryImage = useCallback(
     async (id, file) => {
       try {
-        const image = await uploadAsset(file, 'memories')
+        const image = await uploadAsset(file, 'story')
         await persist({
           ...content,
           memories: content.memories.map((memory) =>
             memory.id === id ? { ...memory, image } : memory,
+          ),
+        })
+      } catch (error) {
+        setSyncError(error.message || 'فشل رفع الصورة')
+        throw error
+      }
+    },
+    [content, persist],
+  )
+
+  const uploadGalleryImage = useCallback(
+    async (id, file) => {
+      try {
+        const image = await uploadAsset(file, 'gallery')
+        await persist({
+          ...content,
+          galleryItems: (content.galleryItems ?? []).map((item) =>
+            item.id === id ? { ...item, image } : item,
           ),
         })
       } catch (error) {
@@ -266,7 +317,11 @@ export function ContentProvider({ children }) {
       updateMemory,
       addMemory,
       removeMemory,
+      updateGalleryItem,
+      addGalleryItem,
+      removeGalleryItem,
       uploadMemoryImage,
+      uploadGalleryImage,
       uploadMusic,
       resetToDefaults,
       syncToCloud,
@@ -284,7 +339,11 @@ export function ContentProvider({ children }) {
       updateMemory,
       addMemory,
       removeMemory,
+      updateGalleryItem,
+      addGalleryItem,
+      removeGalleryItem,
       uploadMemoryImage,
+      uploadGalleryImage,
       uploadMusic,
       resetToDefaults,
       syncToCloud,

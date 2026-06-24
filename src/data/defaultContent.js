@@ -83,4 +83,5 @@ export const defaultContent = {
       text: 'فصل جديد منا — أحلى من الذي قبله.',
     },
   ],
+  galleryItems: [],
 }
