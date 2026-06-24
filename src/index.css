@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Tajawal", "Cairo", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cairo", "Tajawal", ui-sans-serif, sans-serif;
+
+  --color-blush-50: #fff5f7;
+  --color-blush-100: #ffe8ee;
+  --color-blush-200: #ffd1dc;
+  --color-rose-glow: #fb7185;
+  --color-rose-deep: #be123c;
+}
+
+html {
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  color: #881337;
+  background-color: var(--color-blush-50);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.romantic-bg {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgb(251 113 133 / 0.18), transparent),
+    radial-gradient(ellipse 60% 40% at 90% 10%, rgb(244 114 182 / 0.14), transparent),
+    radial-gradient(ellipse 70% 50% at 50% 100%, rgb(253 164 175 / 0.12), transparent),
+    linear-gradient(180deg, #fff5f7 0%, #fff0f5 45%, #ffffff 100%);
+}
+
+.glass-card {
+  background: rgb(255 255 255 / 0.72);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgb(255 255 255 / 0.8);
+  box-shadow: 0 8px 32px -8px rgb(244 114 182 / 0.25);
+}
+
+.polaroid-shadow {
+  box-shadow:
+    0 4px 6px -1px rgb(190 18 60 / 0.08),
+    0 12px 24px -4px rgb(244 114 182 / 0.18),
+    0 0 0 1px rgb(255 228 235 / 0.6);
+}
+
+@media (max-width: 640px) {
+  html,
+  body {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}
+
+@media (min-width: 641px) {
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgb(251 113 133 / 0.45);
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(244 63 94 / 0.55);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(251 113 133 / 0.45) transparent;
+  }
+}
+
+.romantic-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(251 113 133 / 0.45) transparent;
+}
+
+.romantic-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 4px;
+}
+
+.romantic-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.romantic-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(251 113 133 / 0.45);
+  border-radius: 999px;
+}
+
+.romantic-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgb(244 63 94 / 0.55);
+}
