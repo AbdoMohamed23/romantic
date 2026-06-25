@@ -4,7 +4,14 @@ import { getSeedContent, mergeContent } from './contentMerge'
 
 const ADMIN_PASSWORD_KEY = 'romantic-site-admin-password'
 
+let adminPasswordMemory = ''
+
+if (typeof sessionStorage !== 'undefined') {
+  adminPasswordMemory = sessionStorage.getItem(ADMIN_PASSWORD_KEY) || ''
+}
+
 export function setAdminPasswordForSync(password) {
+  adminPasswordMemory = password || ''
   if (password) {
     sessionStorage.setItem(ADMIN_PASSWORD_KEY, password)
   } else {
@@ -13,7 +20,7 @@ export function setAdminPasswordForSync(password) {
 }
 
 export function getAdminPasswordForSync() {
-  return sessionStorage.getItem(ADMIN_PASSWORD_KEY) || ''
+  return adminPasswordMemory || sessionStorage.getItem(ADMIN_PASSWORD_KEY) || ''
 }
 
 function stripUrlField(value) {

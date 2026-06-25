@@ -25,7 +25,6 @@ import {
 } from '../components/dashboard/DashboardFields'
 import { useContent } from '../context/ContentContext'
 import { useAdminAuth, grantVisitorPreviewAccess } from '../hooks/useAuth'
-import { getAdminPasswordForSync } from '../utils/supabaseContent'
 
 const TABS = [
   { id: 'general', label: 'عام', icon: KeyRound },
@@ -137,10 +136,17 @@ function AdminLoginForm({ onLogin }) {
 }
 
 export default function Dashboard() {
-  const { isAdmin, adminLoginWithPassword, adminLogout } = useAdminAuth()
+  const {
+    isAdmin,
+    adminPassword,
+    adminLoginWithPassword,
+    updateAdminPassword,
+    adminLogout,
+  } = useAdminAuth()
   const {
     content,
     musicSrc,
+    isLoading,
     isDirty,
     syncStatus,
     syncError,
@@ -162,21 +168,31 @@ export default function Dashboard() {
     isMusicUploading,
     resetToDefaults,
     saveChanges,
+    loadFromDatabase,
   } = useContent()
   const [activeTab, setActiveTab] = useState('general')
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
 
-  const handleAdminLogin = (password) => {
+  const handleAdminLogin = async (password) => {
     adminLoginWithPassword(password)
+    await loadFromDatabase()
   }
 
   const handleSave = async () => {
+    if (!adminPassword) {
+      adminLogout()
+      return
+    }
+
     setIsSaving(true)
     setSaveMessage('')
 
     try {
-      await saveChanges(getAdminPasswordForSync())
+      const result = await saveChanges(adminPassword)
+      if (result?.nextLoginPassword) {
+        updateAdminPassword(result.nextLoginPassword)
+      }
       setSaveMessage('تم الحفظ على قاعدة البيانات')
       window.setTimeout(() => setSaveMessage(''), 2500)
     } catch {
@@ -195,6 +211,14 @@ export default function Dashboard() {
     return <AdminLoginForm onLogin={handleAdminLogin} />
   }
 
+  if (isLoading) {
+    return (
+      <div className="romantic-bg relative flex min-h-dvh items-center justify-center">
+        <p className="text-sm text-rose-500">جاري تحميل المحتوى من قاعدة البيانات...</p>
+      </div>
+    )
+  }
+
   const renderTab = () => {
     switch (activeTab) {
       case 'general':
@@ -211,7 +235,7 @@ export default function Dashboard() {
                 }}
               />
             </Field>
-            <Field label="كلمة مرور الموقع" hint="يستخدمها الزائر ولوحة التحكم">
+            <Field label="كلمة مرور الموقع" hint="الكلمة الحالية في قاعدة البيانات — غيّرها ثم اضغط حفظ">
               <TextInput
                 value={content.password}
                 onChange={(v) => {

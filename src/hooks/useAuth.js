@@ -1,6 +1,9 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { config } from '../data/config'
-import { setAdminPasswordForSync } from '../utils/supabaseContent'
+import {
+  getAdminPasswordForSync,
+  setAdminPasswordForSync,
+} from '../utils/supabaseContent'
 
 const ADMIN_KEY = config.auth.adminStorageKey
 const VISITOR_KEY = config.auth.storageKey
@@ -9,26 +12,56 @@ function readKey(key) {
   return sessionStorage.getItem(key) === 'true'
 }
 
+function hasValidAdminSession() {
+  return readKey(ADMIN_KEY) && Boolean(getAdminPasswordForSync())
+}
+
+function clearAdminSession() {
+  setAdminPasswordForSync('')
+  sessionStorage.removeItem(ADMIN_KEY)
+}
+
 export function useAdminAuth() {
-  const [isAdmin, setIsAdmin] = useState(() => readKey(ADMIN_KEY))
+  const [adminPassword, setAdminPassword] = useState(() => getAdminPasswordForSync())
+  const [isAdmin, setIsAdmin] = useState(() => hasValidAdminSession())
+
+  useEffect(() => {
+    if (readKey(ADMIN_KEY) && !getAdminPasswordForSync()) {
+      clearAdminSession()
+      setAdminPassword('')
+      setIsAdmin(false)
+    }
+  }, [])
 
   const adminLoginWithPassword = useCallback((password) => {
     setAdminPasswordForSync(password)
     sessionStorage.setItem(ADMIN_KEY, 'true')
+    setAdminPassword(password)
     setIsAdmin(true)
   }, [])
 
+  const updateAdminPassword = useCallback((password) => {
+    setAdminPasswordForSync(password)
+    setAdminPassword(password)
+  }, [])
+
   const adminLogout = useCallback(() => {
-    setAdminPasswordForSync('')
-    sessionStorage.removeItem(ADMIN_KEY)
+    clearAdminSession()
+    setAdminPassword('')
     setIsAdmin(false)
   }, [])
 
-  return { isAdmin, adminLoginWithPassword, adminLogout }
+  return {
+    isAdmin,
+    adminPassword,
+    adminLoginWithPassword,
+    updateAdminPassword,
+    adminLogout,
+  }
 }
 
 export function checkAdminAuth() {
-  return readKey(ADMIN_KEY)
+  return hasValidAdminSession()
 }
 
 export function useAuth() {

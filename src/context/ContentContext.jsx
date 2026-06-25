@@ -14,7 +14,6 @@ import { getSeedContent, nextItemId } from '../utils/contentMerge'
 import { applySiteTheme } from '../utils/theme'
 import ThemeApplier from '../components/ThemeApplier'
 import {
-  getAdminPasswordForSync,
   isAudioFile,
   loadSiteContent,
   saveRemoteContent,
@@ -107,7 +106,7 @@ export function ContentProvider({ children }) {
     loadFromDatabase().catch(() => {})
   }, [loadFromDatabase])
 
-  const saveChanges = useCallback(async (password = getAdminPasswordForSync()) => {
+  const saveChanges = useCallback(async (password) => {
     if (!isSupabaseConfigured) {
       const message = 'Supabase غير مُعدّ — لا يمكن الحفظ'
       setSyncError(message)
@@ -115,7 +114,7 @@ export function ContentProvider({ children }) {
     }
 
     if (!password) {
-      const message = 'سجّل دخول الداشبورد أولاً'
+      const message = 'سجّل خروج ثم ادخل من جديد بكلمة المرور الحالية'
       setSyncError(message)
       throw new Error(message)
     }
@@ -127,18 +126,21 @@ export function ContentProvider({ children }) {
     try {
       await saveRemoteContent(snapshot, password)
 
-      if (snapshot.password && snapshot.password !== password) {
-        setAdminPasswordForSync(snapshot.password)
+      const nextLoginPassword =
+        snapshot.password && snapshot.password !== password ? snapshot.password : null
+
+      if (nextLoginPassword) {
+        setAdminPasswordForSync(nextLoginPassword)
       }
 
       setIsDirty(false)
       setSyncStatus('ready')
-      return true
+      return { nextLoginPassword }
     } catch (error) {
       setSyncStatus('error')
       setSyncError(
         error.message === 'invalid_password'
-          ? 'كلمة مرور الدخول لا تطابق قاعدة البيانات — سجّل خروج وادخل بالكلمة الحالية'
+          ? 'كلمة مرور الدخول لا تطابق قاعدة البيانات — اضغط خروج وادخل بالكلمة المسجّلة حالياً في قاعدة البيانات'
           : error.message || 'فشل الحفظ على Supabase',
       )
       throw error
