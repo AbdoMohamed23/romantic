@@ -6,6 +6,25 @@ function mergeSection(base, patch) {
   return { ...base, ...patch }
 }
 
+function resolveGalleryItems(stored) {
+  if (Array.isArray(stored.galleryItems) && stored.galleryItems.length > 0) {
+    return stored.galleryItems
+  }
+
+  const fromMemories = (stored.memories ?? []).filter((item) =>
+    item.image?.startsWith('http'),
+  )
+
+  if (fromMemories.length > 0) {
+    return fromMemories.map((item, index) => ({
+      ...item,
+      id: item.id ?? index + 1,
+    }))
+  }
+
+  return []
+}
+
 export function mergeContent(stored) {
   if (!stored || Object.keys(stored).length === 0) {
     return structuredClone(defaultContent)
@@ -35,7 +54,7 @@ export function mergeContent(stored) {
     gallery: mergeSection(defaultContent.gallery, stored.gallery),
     final: mergeSection(defaultContent.final, stored.final),
     memories: stored.memories?.length ? stored.memories : defaultContent.memories,
-    galleryItems: Array.isArray(stored.galleryItems) ? stored.galleryItems : [],
+    galleryItems: resolveGalleryItems(stored),
   }
 }
 

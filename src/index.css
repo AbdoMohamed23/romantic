@@ -109,3 +109,147 @@ body {
 .romantic-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgb(244 63 94 / 0.55);
 }
+
+@keyframes heart-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+.heart-pulse {
+  animation: heart-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes enter-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20% {
+    transform: translateX(-8px);
+  }
+
+  40% {
+    transform: translateX(8px);
+  }
+
+  60% {
+    transform: translateX(-6px);
+  }
+
+  80% {
+    transform: translateX(6px);
+  }
+}
+
+.enter-shake {
+  animation: enter-shake 0.45s ease-out;
+}
+
+@keyframes screen-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--screen-y, 12px));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes screen-fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(calc(var(--screen-y, 12px) * -1));
+  }
+}
+
+.screen-fade-in {
+  animation: screen-fade-in var(--screen-fade-in, 720ms) cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.screen-fade-out {
+  animation: screen-fade-out var(--screen-fade-out, 400ms) ease-in both;
+  pointer-events: none;
+}
+
+.screen-fade-instant {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen-fade-in,
+  .screen-fade-out {
+    animation-duration: 0.01ms !important;
+  }
+
+  .screen-fade-in {
+    opacity: 1;
+    transform: none;
+  }
+
+  .screen-fade-out {
+    opacity: 0;
+    transform: none;
+  }
+}
+
+.flow-screen {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 28rem;
+}
+
+.flow-page {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.flow-page--center {
+  min-height: calc(100dvh - 5rem - 6.5rem);
+  justify-content: center;
+}
+
+.flow-page--flow {
+  justify-content: center;
+}
+
+@keyframes music-bar-pulse {
+  0%,
+  100% {
+    transform: scaleY(0.45);
+    opacity: 0.55;
+  }
+
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.music-bar {
+  transform-origin: bottom;
+  animation: music-bar-pulse 0.9s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .music-bar {
+    animation: none;
+  }
+}

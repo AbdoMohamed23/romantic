@@ -1,4 +1,4 @@
-const musicModules = import.meta.glob('../assets/music/*.{mp3,ogg,wav}', {
+const musicModules = import.meta.glob('../assets/music/*.{mp3,ogg,wav,m4a,aac,flac,webm,opus}', {
   eager: true,
   import: 'default',
 })

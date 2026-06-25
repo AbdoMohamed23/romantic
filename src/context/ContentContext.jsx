@@ -12,6 +12,7 @@ import { isSupabaseConfigured } from '../lib/supabase'
 import { getSeedContent, nextItemId } from '../utils/contentMerge'
 import {
   getAdminPasswordForSync,
+  isAudioFile,
   loadSiteContent,
   pushContentToCloud,
   saveRemoteContent,
@@ -34,6 +35,7 @@ export function ContentProvider({ children }) {
   const [syncError, setSyncError] = useState(
     isSupabaseConfigured ? '' : 'تعذّر الاتصال بالخادم',
   )
+  const [isMusicUploading, setIsMusicUploading] = useState(false)
 
   useEffect(() => {
     if (!isSupabaseConfigured) return
@@ -263,6 +265,15 @@ export function ContentProvider({ children }) {
 
   const uploadMusic = useCallback(
     async (file) => {
+      if (!isAudioFile(file)) {
+        const error = new Error('الملف لازم يكون صوت (mp3, m4a, wav, ogg, flac...)')
+        setSyncError(error.message)
+        throw error
+      }
+
+      setIsMusicUploading(true)
+      setSyncError('')
+
       try {
         const url = await uploadAsset(file, 'music')
         await persist({
@@ -276,6 +287,8 @@ export function ContentProvider({ children }) {
       } catch (error) {
         setSyncError(error.message || 'فشل رفع الأغنية')
         throw error
+      } finally {
+        setIsMusicUploading(false)
       }
     },
     [content, persist],
@@ -310,6 +323,7 @@ export function ContentProvider({ children }) {
       syncStatus,
       syncError,
       isSupabaseConfigured,
+      isMusicUploading,
       updateField,
       updateNestedField,
       updateRoot,
@@ -332,6 +346,7 @@ export function ContentProvider({ children }) {
       isLoading,
       syncStatus,
       syncError,
+      isMusicUploading,
       updateField,
       updateNestedField,
       updateRoot,
@@ -345,6 +360,7 @@ export function ContentProvider({ children }) {
       uploadMemoryImage,
       uploadGalleryImage,
       uploadMusic,
+      isMusicUploading,
       resetToDefaults,
       syncToCloud,
     ],

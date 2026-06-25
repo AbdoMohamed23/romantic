@@ -4,7 +4,7 @@ import { config } from '../data/config'
 
 export default function WordByWord({
   text,
-  wordDelay = config.animations.final.wordDelay,
+  wordDelay = config.animations.text.wordDelay,
   className = '',
 }) {
   const words = text.split(/\s+/).filter(Boolean)

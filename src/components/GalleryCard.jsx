@@ -1,61 +1,46 @@
-import { motion } from 'framer-motion'
-
-function formatDate(dateString) {
-  if (!dateString) return null
-
-  return new Intl.DateTimeFormat('ar-EG', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(dateString))
-}
-
-const rotations = ['-rotate-2', 'rotate-1', '-rotate-1', 'rotate-2']
-
-export default function GalleryCard({ memory, index = 0, onOpen }) {
-  const formattedDate = formatDate(memory.date)
-  const rotation = rotations[index % rotations.length]
+export default function GalleryCard({ item, index = 0, onOpen }) {
+  const formattedDate = item.date
+    ? new Intl.DateTimeFormat('ar-EG', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      }).format(new Date(item.date))
+    : null
 
   return (
-    <motion.button
+    <button
       type="button"
       onClick={() => onOpen(index)}
-      initial={{ opacity: 0, y: 24, rotate: 0 }}
-      whileInView={{ opacity: 1, y: 0, rotate: 0 }}
-      viewport={{ once: true, margin: '-20px' }}
-      whileHover={{ y: -4, scale: 1.02 }}
-      whileTap={{ scale: 0.97 }}
-      transition={{ duration: 0.5, delay: (index % 4) * 0.08 }}
-      className={`group w-full text-start ${index % 3 === 1 ? 'sm:translate-y-4' : ''}`}
+      className="group w-full max-w-[11rem] text-center transition active:scale-[0.98] sm:max-w-none"
     >
-      <article
-        className={`polaroid-shadow overflow-hidden rounded-sm bg-white p-2 pb-5 transition-transform duration-300 ${rotation} group-hover:rotate-0`}
-      >
+      <article className="polaroid-shadow mx-auto overflow-hidden rounded-sm bg-white p-2 pb-5 transition-transform duration-300 group-hover:scale-[1.02]">
         <div className="aspect-[4/5] overflow-hidden bg-gradient-to-br from-blush-100 to-rose-100">
-          {memory.image ? (
+          {item.image ? (
             <img
-              src={memory.image}
-              alt={memory.text}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              src={item.image}
+              alt={item.text || 'ذكرى'}
+              className="h-full w-full object-cover"
               loading="lazy"
+              decoding="async"
             />
           ) : (
             <div className="flex h-full flex-col items-center justify-center gap-2 text-rose-300/80">
               <span className="text-3xl">♥</span>
-              <span className="text-[10px]">ذكرى جميلة</span>
             </div>
           )}
         </div>
 
-        <div className="mt-3 px-1">
+        <div className="mt-3 px-1 text-center">
           {formattedDate ? (
             <p className="text-[10px] text-rose-400 sm:text-xs">{formattedDate}</p>
           ) : null}
-          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-rose-700 sm:text-sm">
-            {memory.text}
-          </p>
+          {item.text ? (
+            <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-rose-700 sm:text-sm">
+              {item.text}
+            </p>
+          ) : null}
         </div>
       </article>
-    </motion.button>
+    </button>
   )
 }

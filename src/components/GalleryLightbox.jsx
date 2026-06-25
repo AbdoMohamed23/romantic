@@ -1,26 +1,19 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { X, ChevronRight, ChevronLeft } from 'lucide-react'
-
-function formatDate(dateString) {
-  if (!dateString) return null
-  return new Intl.DateTimeFormat('ar-EG', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  }).format(new Date(dateString))
-}
+import { formatDateLong } from '../utils/formatDate'
 
 export default function GalleryLightbox({
-  memories,
+  items,
   activeIndex,
   onClose,
   onIndexChange,
 }) {
   const dragThreshold = 60
-  const memory = memories[activeIndex]
+  const item = items[activeIndex]
+  if (!item) return null
 
   const goNext = () => {
-    if (activeIndex < memories.length - 1) onIndexChange(activeIndex + 1)
+    if (activeIndex < items.length - 1) onIndexChange(activeIndex + 1)
   }
 
   const goPrev = () => {
@@ -32,7 +25,8 @@ export default function GalleryLightbox({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] flex flex-col bg-rose-50/92 backdrop-blur-xl"
+      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+      className="fixed inset-0 z-[100] flex flex-col bg-rose-50/95 backdrop-blur-xl"
       onClick={onClose}
     >
       <div
@@ -41,7 +35,7 @@ export default function GalleryLightbox({
         onClick={(e) => e.stopPropagation()}
       >
         <p className="text-sm font-medium text-rose-400">
-          {activeIndex + 1} / {memories.length}
+          {activeIndex + 1} / {items.length}
         </p>
         <button
           type="button"
@@ -69,25 +63,25 @@ export default function GalleryLightbox({
 
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
-            key={memory.id}
+            key={item.id}
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.15}
+            dragElastic={0.12}
             onDragEnd={(_, info) => {
               if (info.offset.x > dragThreshold) goPrev()
               else if (info.offset.x < -dragThreshold) goNext()
             }}
-            initial={{ opacity: 0, scale: 0.92, x: 40 }}
-            animate={{ opacity: 1, scale: 1, x: 0 }}
-            exit={{ opacity: 0, scale: 0.92, x: -40 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -24 }}
+            transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
             className="flex max-h-[70dvh] w-full max-w-lg flex-col items-center touch-pan-y"
           >
             <div className="flex w-full items-center justify-center">
-              {memory.image ? (
+              {item.image ? (
                 <img
-                  src={memory.image}
-                  alt={memory.text}
+                  src={item.image}
+                  alt={item.text || 'ذكرى'}
                   className="max-h-[60dvh] w-auto max-w-full rounded-2xl object-contain shadow-xl shadow-rose-200/50"
                   draggable={false}
                 />
@@ -98,21 +92,25 @@ export default function GalleryLightbox({
               )}
             </div>
 
-            <div className="mt-5 w-full max-w-sm px-4 text-center">
-              {memory.date ? (
-                <p className="text-xs text-rose-400">{formatDate(memory.date)}</p>
-              ) : null}
-              <p className="mt-2 text-base leading-relaxed text-rose-800">
-                {memory.text}
-              </p>
-            </div>
+            {(item.date || item.text) && (
+              <div className="mt-5 w-full max-w-sm px-4 text-center">
+                {item.date ? (
+                  <p className="text-xs text-rose-400">{formatDateLong(item.date)}</p>
+                ) : null}
+                {item.text ? (
+                  <p className="mt-2 text-base leading-relaxed text-rose-800">
+                    {item.text}
+                  </p>
+                ) : null}
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
 
         <button
           type="button"
           onClick={goNext}
-          disabled={activeIndex === memories.length - 1}
+          disabled={activeIndex === items.length - 1}
           className="absolute end-2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-rose-500 shadow-sm disabled:opacity-30 sm:end-4"
           aria-label="التالي"
         >

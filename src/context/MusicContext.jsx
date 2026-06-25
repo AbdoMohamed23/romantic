@@ -1,9 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { config } from '../data/config'
+import { formatAudioTime } from '../utils/formatAudioTime'
 import { useContent } from './ContentContext'
 
 const MUSIC_KEY = config.music.storageKey
 const PENDING_KEY = config.music.pendingStartKey
+const SEEK_STEP = 10
 
 const MusicContext = createContext(null)
 
@@ -16,12 +18,41 @@ export function MusicProvider({ children }) {
   const { content, musicSrc } = useContent()
   const audioRef = useRef(null)
   const [isPlaying, setIsPlaying] = useState(() => readMusicPreference() === true)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
 
   useEffect(() => {
     const audio = audioRef.current
     if (!audio || !musicSrc) return
     audio.src = musicSrc
     audio.load()
+    setCurrentTime(0)
+    setDuration(0)
+  }, [musicSrc])
+
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return undefined
+
+    const onTimeUpdate = () => setCurrentTime(audio.currentTime)
+    const onLoadedMetadata = () => setDuration(audio.duration || 0)
+    const onDurationChange = () => setDuration(audio.duration || 0)
+    const onEnded = () => {
+      setIsPlaying(false)
+      sessionStorage.setItem(MUSIC_KEY, 'false')
+    }
+
+    audio.addEventListener('timeupdate', onTimeUpdate)
+    audio.addEventListener('loadedmetadata', onLoadedMetadata)
+    audio.addEventListener('durationchange', onDurationChange)
+    audio.addEventListener('ended', onEnded)
+
+    return () => {
+      audio.removeEventListener('timeupdate', onTimeUpdate)
+      audio.removeEventListener('loadedmetadata', onLoadedMetadata)
+      audio.removeEventListener('durationchange', onDurationChange)
+      audio.removeEventListener('ended', onEnded)
+    }
   }, [musicSrc])
 
   const persistPreference = useCallback((playing) => {
@@ -60,6 +91,26 @@ export function MusicProvider({ children }) {
     await playMusic()
   }, [isPlaying, pauseMusic, playMusic])
 
+  const seekTo = useCallback(
+    (time) => {
+      const audio = audioRef.current
+      if (!audio || !Number.isFinite(time)) return
+
+      const nextTime = Math.min(Math.max(time, 0), duration || audio.duration || 0)
+      audio.currentTime = nextTime
+      setCurrentTime(nextTime)
+    },
+    [duration],
+  )
+
+  const skipBackward = useCallback(() => {
+    seekTo(currentTime - SEEK_STEP)
+  }, [currentTime, seekTo])
+
+  const skipForward = useCallback(() => {
+    seekTo(currentTime + SEEK_STEP)
+  }, [currentTime, seekTo])
+
   const requestMusicStart = useCallback(() => {
     sessionStorage.setItem(PENDING_KEY, 'true')
     sessionStorage.setItem(MUSIC_KEY, 'true')
@@ -80,6 +131,8 @@ export function MusicProvider({ children }) {
     await playMusic()
   }, [playMusic])
 
+  const progress = duration > 0 ? Math.min(currentTime / duration, 1) : 0
+
   const value = useMemo(
     () => ({
       audioRef,
@@ -87,19 +140,33 @@ export function MusicProvider({ children }) {
       isPlaying,
       musicSrc,
       musicTitle: content.music.title,
+      currentTime,
+      duration,
+      progress,
+      currentTimeLabel: formatAudioTime(currentTime),
+      durationLabel: formatAudioTime(duration, { padMinutes: true }),
       pauseMusic,
       playMusic,
       requestMusicStart,
+      seekTo,
+      skipBackward,
+      skipForward,
       togglePlayback,
       tryWelcomeMusicStart,
     }),
     [
       content.music.title,
+      currentTime,
+      duration,
       isPlaying,
       musicSrc,
       pauseMusic,
       playMusic,
+      progress,
       requestMusicStart,
+      seekTo,
+      skipBackward,
+      skipForward,
       togglePlayback,
       tryWelcomeMusicStart,
     ],

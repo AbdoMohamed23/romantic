@@ -103,11 +103,33 @@ function guessMimeType(file) {
     gif: 'image/gif',
     mp3: 'audio/mpeg',
     mpeg: 'audio/mpeg',
+    mpga: 'audio/mpeg',
     ogg: 'audio/ogg',
     wav: 'audio/wav',
+    wave: 'audio/wav',
+    m4a: 'audio/mp4',
+    mp4: 'audio/mp4',
+    aac: 'audio/aac',
+    flac: 'audio/flac',
+    webm: 'audio/webm',
+    weba: 'audio/webm',
+    opus: 'audio/opus',
+    amr: 'audio/amr',
+    mid: 'audio/midi',
+    midi: 'audio/midi',
   }
 
   return map[extension] || 'application/octet-stream'
+}
+
+export function isAudioFile(file) {
+  if (!file) return false
+  if (file.type.startsWith('audio/')) return true
+
+  const extension = file.name.split('.').pop()?.toLowerCase()
+  return /^(mp3|mpeg|mpga|ogg|wav|wave|m4a|mp4|aac|flac|webm|weba|opus|amr|mid|midi)$/.test(
+    extension || '',
+  )
 }
 
 export async function uploadAsset(file, folder) {

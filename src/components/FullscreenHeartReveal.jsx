@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { Heart } from 'lucide-react'
 import { config } from '../data/config'
 
-const { fullscreenReveal } = config.animations
+const { welcome: welcomeReveal } = config.animations
 
 function pickSize() {
   const roll = Math.random()
@@ -28,18 +28,18 @@ function createOverlayHearts(count) {
 export default function FullscreenHeartReveal({ onComplete }) {
   const [opening, setOpening] = useState(false)
   const overlayHearts = useMemo(
-    () => createOverlayHearts(fullscreenReveal.heartCount),
+    () => createOverlayHearts(welcomeReveal.heartCount),
     [],
   )
 
   useEffect(() => {
     const openTimer = window.setTimeout(() => {
       setOpening(true)
-    }, fullscreenReveal.holdDuration * 1000)
+    }, welcomeReveal.holdDuration * 1000)
 
     const doneTimer = window.setTimeout(() => {
       onComplete?.()
-    }, (fullscreenReveal.holdDuration + fullscreenReveal.openDuration) * 1000)
+    }, (welcomeReveal.holdDuration + welcomeReveal.openDuration) * 1000)
 
     return () => {
       window.clearTimeout(openTimer)
@@ -66,7 +66,7 @@ export default function FullscreenHeartReveal({ onComplete }) {
           : { opacity: 1, scale: 1 }
       }
       transition={{
-        duration: fullscreenReveal.openDuration,
+        duration: welcomeReveal.openDuration,
         ease: [0.76, 0, 0.24, 1],
       }}
     >

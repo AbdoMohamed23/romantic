@@ -125,6 +125,7 @@ export default function Dashboard() {
     uploadMemoryImage,
     uploadGalleryImage,
     uploadMusic,
+    isMusicUploading,
     resetToDefaults,
     syncToCloud,
   } = useContent()
@@ -145,7 +146,7 @@ export default function Dashboard() {
 
   const handlePreview = () => {
     grantVisitorPreviewAccess()
-    window.open('/welcome', '_blank')
+    window.open('/', '_blank')
   }
 
   if (!isAdmin) {
@@ -241,17 +242,39 @@ export default function Dashboard() {
               </span>
             </Field>
             <Field label="ملف الأغنية" hint={content.music.fileName}>
-              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-rose-200 bg-rose-50/50 px-4 py-6 text-sm text-rose-500 transition hover:border-rose-300">
-                <Music2 size={18} />
-                رفع ملف mp3 / ogg / wav
+              <label
+                className={`relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-6 text-sm transition ${
+                  isMusicUploading
+                    ? 'border-rose-300 bg-rose-50 text-rose-500'
+                    : 'border-rose-200 bg-rose-50/50 text-rose-500 hover:border-rose-300'
+                } ${isMusicUploading ? 'pointer-events-none opacity-80' : ''}`}
+              >
+                {isMusicUploading ? (
+                  <>
+                    <span className="h-6 w-6 animate-spin rounded-full border-2 border-rose-200 border-t-rose-500" />
+                    <span className="font-medium">جاري رفع الملف...</span>
+                    <span className="text-xs text-rose-400">انتظر لحظات</span>
+                  </>
+                ) : (
+                  <>
+                    <Music2 size={18} />
+                    <span>رفع أي ملف صوت</span>
+                    <span className="text-xs text-rose-400">
+                      mp3 · m4a · wav · ogg · flac · aac · webm
+                    </span>
+                  </>
+                )}
                 <input
                   type="file"
-                  accept="audio/*"
+                  accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac,.webm,.opus,.mpeg,.mpga"
                   className="hidden"
+                  disabled={isMusicUploading}
                   onChange={(e) => {
                     const file = e.target.files?.[0]
                     if (file) {
-                      uploadMusic(file).then(flashSaved)
+                      uploadMusic(file)
+                        .then(flashSaved)
+                        .catch(() => {})
                     }
                     e.target.value = ''
                   }}

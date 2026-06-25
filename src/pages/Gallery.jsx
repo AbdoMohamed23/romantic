@@ -1,64 +1,72 @@
-import { useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import { useMemo, useState } from 'react'
+import { AnimatePresence } from 'framer-motion'
+import FlowPage from '../components/FlowPage'
 import GalleryCard from '../components/GalleryCard'
 import GalleryLightbox from '../components/GalleryLightbox'
 import NextButton from '../components/NextButton'
+import { RevealGroup, RevealItem } from '../components/Reveal'
 import { useContent } from '../context/ContentContext'
 
-export default function Gallery() {
-  const navigate = useNavigate()
+export default function Gallery({ onNext }) {
   const { content } = useContent()
   const { gallery, galleryItems = [] } = content
   const [lightboxIndex, setLightboxIndex] = useState(null)
 
+  const items = useMemo(
+    () =>
+      [...galleryItems].sort((a, b) => {
+        if (!a.date && !b.date) return 0
+        if (!a.date) return 1
+        if (!b.date) return -1
+        return new Date(b.date) - new Date(a.date)
+      }),
+    [galleryItems],
+  )
+
+  const hasItems = items.length > 0
+
   return (
-    <section className="mx-auto w-full pb-4">
-      <motion.header
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
-        className="mb-6 text-center"
-      >
+    <FlowPage variant="flow" className="pb-4">
+      <RevealItem as="header" className="mb-6 w-full">
         <p className="text-xs font-medium text-rose-400">{gallery.eyebrow}</p>
         <h1 className="font-display mt-2 text-3xl font-bold text-rose-900">
           {gallery.title}
         </h1>
-      </motion.header>
+      </RevealItem>
 
-      <div className="grid grid-cols-2 gap-4 sm:gap-5">
-        {galleryItems.map((item, index) => (
-          <GalleryCard
-            key={item.id}
-            memory={item}
-            index={index}
-            onOpen={setLightboxIndex}
-          />
-        ))}
-      </div>
+      {hasItems ? (
+        <RevealGroup className="grid w-full grid-cols-2 justify-items-center gap-4 sm:gap-5">
+          {items.map((item, index) => (
+            <RevealItem key={item.id} className="w-full">
+              <GalleryCard item={item} index={index} onOpen={setLightboxIndex} />
+            </RevealItem>
+          ))}
+        </RevealGroup>
+      ) : (
+        <RevealItem className="w-full">
+          <div className="glass-card w-full rounded-3xl px-6 py-14 text-center">
+            <p className="text-4xl">♥</p>
+            <p className="mt-4 text-sm leading-relaxed text-rose-500">
+              صورنا الحلوة هتظهر هنا قريباً ♥
+            </p>
+          </div>
+        </RevealItem>
+      )}
 
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.35, delay: 0.05 }}
-        className="mt-10"
-      >
-        <NextButton onClick={() => navigate('/final')}>
-          {gallery.finalButton}
-        </NextButton>
-      </motion.div>
+      <RevealItem className="mt-10 w-full">
+        <NextButton onClick={onNext}>{gallery.finalButton}</NextButton>
+      </RevealItem>
 
       <AnimatePresence>
-        {lightboxIndex !== null ? (
+        {lightboxIndex !== null && items[lightboxIndex] ? (
           <GalleryLightbox
-            memories={galleryItems}
+            items={items}
             activeIndex={lightboxIndex}
             onClose={() => setLightboxIndex(null)}
             onIndexChange={setLightboxIndex}
           />
         ) : null}
       </AnimatePresence>
-    </section>
+    </FlowPage>
   )
 }
