@@ -138,11 +138,13 @@ export function ContentProvider({ children }) {
       return { nextLoginPassword }
     } catch (error) {
       setSyncStatus('error')
-      setSyncError(
-        error.message === 'invalid_password'
-          ? 'كلمة مرور الدخول لا تطابق قاعدة البيانات — اضغط خروج وادخل بالكلمة المسجّلة حالياً في قاعدة البيانات'
-          : error.message || 'فشل الحفظ على Supabase',
-      )
+      if (error.message === 'invalid_password') {
+        const message =
+          'جلسة الدخول قديمة أو كلمة المرور اتغيّرت — سجّل خروج وادخل بالكلمة الحالية في قاعدة البيانات'
+        setSyncError(message)
+        throw Object.assign(new Error(message), { code: 'invalid_password' })
+      }
+      setSyncError(error.message || 'فشل الحفظ على Supabase')
       throw error
     }
   }, [])

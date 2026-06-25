@@ -169,6 +169,7 @@ export default function Dashboard() {
     resetToDefaults,
     saveChanges,
     loadFromDatabase,
+    verifyPassword,
   } = useContent()
   const [activeTab, setActiveTab] = useState('general')
   const [isSaving, setIsSaving] = useState(false)
@@ -178,6 +179,22 @@ export default function Dashboard() {
     adminLoginWithPassword(password)
     await loadFromDatabase()
   }
+
+  useEffect(() => {
+    if (!isAdmin || !adminPassword || isLoading || !isSupabaseConfigured) return
+
+    let cancelled = false
+
+    verifyPassword(adminPassword).then((valid) => {
+      if (!cancelled && !valid) {
+        adminLogout()
+      }
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [isAdmin, adminPassword, isLoading, isSupabaseConfigured, verifyPassword, adminLogout])
 
   const handleSave = async () => {
     if (!adminPassword) {
@@ -195,8 +212,10 @@ export default function Dashboard() {
       }
       setSaveMessage('تم الحفظ على قاعدة البيانات')
       window.setTimeout(() => setSaveMessage(''), 2500)
-    } catch {
-      // syncError يُعرض في الهيدر
+    } catch (error) {
+      if (error?.code === 'invalid_password') {
+        adminLogout()
+      }
     } finally {
       setIsSaving(false)
     }
@@ -235,7 +254,10 @@ export default function Dashboard() {
                 }}
               />
             </Field>
-            <Field label="كلمة مرور الموقع" hint="الكلمة الحالية في قاعدة البيانات — غيّرها ثم اضغط حفظ">
+            <Field
+              label="كلمة مرور الموقع (للزوار)"
+              hint="الكلمة اللي هيدخل بيها الزائر — مش كلمة دخول الداشبورد"
+            >
               <TextInput
                 value={content.password}
                 onChange={(v) => {
@@ -243,6 +265,11 @@ export default function Dashboard() {
                 }}
               />
             </Field>
+            <p className="-mt-2 rounded-xl border border-rose-100 bg-rose-50/80 px-3 py-2.5 text-xs leading-relaxed text-rose-600">
+              لتغيير كلمة المرور: ادخل الداشبورد بالكلمة <strong>الحالية</strong>، اكتب
+              الكلمة <strong>الجديدة</strong> هنا، ثم اضغط حفظ. الحفظ بيستخدم كلمة
+              الدخول اللي دخلت بيها — مش الكلمة الجديدة في الحقل.
+            </p>
             <Field label="تاريخ بداية العلاقة">
               <DateInput
                 value={content.dates.relationshipStart}

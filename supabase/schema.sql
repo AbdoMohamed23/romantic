@@ -67,6 +67,25 @@ $$;
 GRANT EXECUTE ON FUNCTION public.get_site_content() TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.save_site_content(TEXT, JSONB) TO anon, authenticated;
 
+CREATE OR REPLACE FUNCTION public.verify_site_password(p_password TEXT)
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT COALESCE(
+    (
+      SELECT (data->>'password') IS NOT DISTINCT FROM p_password
+      FROM site_content
+      WHERE id = 1
+    ),
+    false
+  );
+$$;
+
+GRANT EXECUTE ON FUNCTION public.verify_site_password(TEXT) TO anon, authenticated;
+
 -- تخزين الصور والموسيقى
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
