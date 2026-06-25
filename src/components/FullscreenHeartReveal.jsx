@@ -3,32 +3,18 @@ import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { Heart } from 'lucide-react'
 import { config } from '../data/config'
+import {
+  createStaticHearts,
+  getHeartCount,
+  heartColor,
+} from '../utils/heartVisuals'
 
 const { welcome: welcomeReveal } = config.animations
-
-function pickSize() {
-  const roll = Math.random()
-  if (roll < 0.08) return 64 + Math.random() * 56
-  if (roll < 0.2) return 40 + Math.random() * 28
-  if (roll < 0.45) return 22 + Math.random() * 20
-  return 12 + Math.random() * 14
-}
-
-function createOverlayHearts(count) {
-  return Array.from({ length: count }, (_, id) => ({
-    id,
-    left: Math.random() * 100,
-    top: Math.random() * 100,
-    size: pickSize(),
-    opacity: 0.18 + Math.random() * 0.45,
-    delay: Math.random() * 0.7,
-  }))
-}
 
 export default function FullscreenHeartReveal({ onComplete }) {
   const [opening, setOpening] = useState(false)
   const overlayHearts = useMemo(
-    () => createOverlayHearts(welcomeReveal.heartCount),
+    () => createStaticHearts(getHeartCount() || config.hearts.count),
     [],
   )
 
@@ -80,7 +66,8 @@ export default function FullscreenHeartReveal({ onComplete }) {
             left: `${heart.left}%`,
             top: `${heart.top}%`,
             fontSize: `${heart.size}px`,
-            color: `rgba(239, 100, 110, ${heart.opacity})`,
+            color: heartColor(heart.opacity),
+            textShadow: '0 0 14px rgba(251, 113, 133, 0.4)',
           }}
           initial={{ opacity: 0, scale: 0.2 }}
           animate={{ opacity: heart.opacity, scale: 1 }}
