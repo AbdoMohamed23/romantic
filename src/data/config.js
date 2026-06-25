@@ -24,11 +24,17 @@ export const config = {
     welcome: {
       holdDuration: 1.4,
       openDuration: 1.2,
-      heartCount: 65,
     },
     text: {
       wordDelay: 140,
       celebrationDuration: 4,
     },
+  },
+  hearts: {
+    count: 65,
+    mobileRatio: 0.85,
+    rgb: '251, 113, 133',
+    opacityMin: 0.38,
+    opacityMax: 0.82,
   },
 }
