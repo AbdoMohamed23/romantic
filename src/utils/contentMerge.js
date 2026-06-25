@@ -1,4 +1,5 @@
 import { defaultContent } from '../data/defaultContent'
+import { normalizeAppearance } from './theme'
 
 function withoutTrailingHeart(text) {
   if (typeof text !== 'string') return text
@@ -61,6 +62,10 @@ export function mergeContent(stored) {
     },
     gallery: mergeSection(defaultContent.gallery, stored.gallery),
     final: mergeSection(defaultContent.final, stored.final),
+    appearance: normalizeAppearance({
+      ...defaultContent.appearance,
+      ...stored.appearance,
+    }),
     memories: stored.memories?.length ? stored.memories : defaultContent.memories,
     galleryItems: resolveGalleryItems(stored),
   }

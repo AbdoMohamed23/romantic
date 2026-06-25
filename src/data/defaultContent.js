@@ -3,6 +3,10 @@ import { musicAsset } from './musicAsset'
 export const defaultContent = {
   siteName: 'هدية حب',
   password: 'ThisIsLove',
+  appearance: {
+    primaryColor: '#fb7185',
+    heartOpacity: 0.65,
+  },
   dates: {
     relationshipStart: '2023-06-24T00:00:00',
     firstMeeting: '2023-06-24',

@@ -7,6 +7,7 @@ import {
   createStaticHearts,
   getHeartCount,
   heartColor,
+  heartGlowShadow,
 } from '../utils/heartVisuals'
 
 const { welcome: welcomeReveal } = config.animations
@@ -67,7 +68,7 @@ export default function FullscreenHeartReveal({ onComplete }) {
             top: `${heart.top}%`,
             fontSize: `${heart.size}px`,
             color: heartColor(heart.opacity),
-            textShadow: '0 0 14px rgba(251, 113, 133, 0.4)',
+            textShadow: heartGlowShadow(),
           }}
           initial={{ opacity: 0, scale: 0.2 }}
           animate={{ opacity: heart.opacity, scale: 1 }}
@@ -82,7 +83,7 @@ export default function FullscreenHeartReveal({ onComplete }) {
           initial={{ scale: 0.4, opacity: 0 }}
           animate={{ scale: [0.4, 1.1, 1], opacity: 1 }}
           transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
-          className="flex h-36 w-36 items-center justify-center rounded-full bg-white/65 shadow-[0_0_80px_rgba(251,113,133,0.45)] backdrop-blur-sm"
+          className="flex h-36 w-36 items-center justify-center rounded-full bg-white/65 theme-shadow-intro backdrop-blur-sm"
         >
           <motion.div
             animate={{ scale: [1, 1.12, 1] }}

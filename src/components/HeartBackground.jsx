@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
+import { useContent } from '../context/ContentContext'
 import {
   createFloatingHearts,
   getHeartCount,
   heartColor,
+  heartGlowShadow,
 } from '../utils/heartVisuals'
 
 export default function HeartBackground({ className = '' }) {
+  const { content } = useContent()
+  const appearance = content.appearance
   const [count, setCount] = useState(() => getHeartCount())
 
   useEffect(() => {
@@ -26,7 +30,7 @@ export default function HeartBackground({ className = '' }) {
 
   const hearts = useMemo(
     () => (count > 0 ? createFloatingHearts(count) : []),
-    [count],
+    [count, appearance?.heartOpacity, appearance?.primaryColor],
   )
 
   if (hearts.length === 0) return null
@@ -45,7 +49,7 @@ export default function HeartBackground({ className = '' }) {
             bottom: '-4rem',
             fontSize: `${heart.size}px`,
             color: heartColor(heart.opacity),
-            textShadow: '0 0 12px rgba(251, 113, 133, 0.35)',
+            textShadow: heartGlowShadow(),
           }}
           initial={{ y: 0, opacity: 0 }}
           animate={{

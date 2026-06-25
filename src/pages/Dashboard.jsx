@@ -208,6 +208,86 @@ export default function Dashboard() {
                 }}
               />
             </Field>
+
+            <div className="my-6 border-t border-rose-100 pt-6">
+              <h3 className="font-display text-base font-semibold text-rose-900">
+                الهوية البصرية
+              </h3>
+              <p className="mt-1 text-xs text-rose-400">
+                اختر لون الموقع — باقي الدرجات تتولّد تلقائياً منه
+              </p>
+            </div>
+
+            <Field
+              label="اللون الرئيسي"
+              hint="يُطبَّق على الأزرار، النصوص، الخلفية، والقلوب"
+            >
+              <div className="flex flex-wrap items-center gap-3">
+                <input
+                  type="color"
+                  value={content.appearance?.primaryColor || '#fb7185'}
+                  onChange={(e) => {
+                    updateField('appearance', 'primaryColor', e.target.value)
+                    flashSaved()
+                  }}
+                  className="h-11 w-14 cursor-pointer rounded-xl border border-rose-100 bg-white p-1"
+                />
+                <TextInput
+                  value={content.appearance?.primaryColor || '#fb7185'}
+                  onChange={(v) => {
+                    if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+                      updateField('appearance', 'primaryColor', v)
+                      flashSaved()
+                    }
+                  }}
+                />
+                <span
+                  className="inline-flex h-9 min-w-9 items-center justify-center rounded-full px-3 text-xs font-semibold text-white"
+                  style={{ backgroundColor: content.appearance?.primaryColor || '#fb7185' }}
+                >
+                  معاينة
+                </span>
+              </div>
+            </Field>
+
+            <Field
+              label="شفافية القلوب الطائرة"
+              hint="كلما زادت، ظهرت القلوب أوضح في الخلفية"
+            >
+              <input
+                type="range"
+                min="0.1"
+                max="1"
+                step="0.05"
+                value={content.appearance?.heartOpacity ?? 0.65}
+                onChange={(e) => {
+                  updateField('appearance', 'heartOpacity', Number(e.target.value))
+                  flashSaved()
+                }}
+                className="w-full accent-rose-400"
+              />
+              <span className="text-xs text-rose-400">
+                {Math.round((content.appearance?.heartOpacity ?? 0.65) * 100)}%
+              </span>
+            </Field>
+
+            <div className="flex flex-wrap gap-2">
+              {['#fb7185', '#f472b6', '#e879f9', '#c084fc', '#f97316', '#38bdf8'].map(
+                (color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => {
+                      updateField('appearance', 'primaryColor', color)
+                      flashSaved()
+                    }}
+                    className="h-8 w-8 rounded-full border-2 border-white shadow-sm ring-1 ring-rose-100 transition hover:scale-110"
+                    style={{ backgroundColor: color }}
+                    aria-label={`اختيار ${color}`}
+                  />
+                ),
+              )}
+            </div>
           </Section>
         )
 

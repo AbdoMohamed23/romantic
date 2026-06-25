@@ -11,18 +11,30 @@ import RomanticShell from './RomanticShell'
 
 const STEPS = ['welcome', 'story', 'gallery', 'final']
 
+const PREVIOUS_STEP = {
+  story: 'welcome',
+  gallery: 'story',
+  final: 'gallery',
+}
+
 export default function Home() {
   const { isAuthenticated, login } = useAuth()
   const { requestMusicStart } = useMusic()
   const [step, setStep] = useState('welcome')
 
   const screenKey = isAuthenticated ? step : 'login'
+  const canGoBack = isAuthenticated && Boolean(PREVIOUS_STEP[step])
 
   const goTo = useCallback((nextStep) => {
     if (STEPS.includes(nextStep) && nextStep !== step) {
       setStep(nextStep)
     }
   }, [step])
+
+  const handleBack = useCallback(() => {
+    const previous = PREVIOUS_STEP[step]
+    if (previous) goTo(previous)
+  }, [goTo, step])
 
   const handleLogin = useCallback(() => {
     login()
@@ -48,7 +60,11 @@ export default function Home() {
   }
 
   return (
-    <RomanticShell showMusic={isAuthenticated}>
+    <RomanticShell
+      showMusic={isAuthenticated}
+      showBack={canGoBack}
+      onBack={handleBack}
+    >
       <FadeSwap activeKey={screenKey} className="flow-screen">
         {renderScreen}
       </FadeSwap>

@@ -29,7 +29,7 @@ export default function GalleryLightbox({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-      className="fixed inset-0 z-[100] flex flex-col bg-rose-50/95 backdrop-blur-xl"
+      className="fixed inset-0 z-[100] flex flex-col theme-lightbox-bg backdrop-blur-xl"
       onClick={onClose}
     >
       <div
@@ -71,12 +71,12 @@ export default function GalleryLightbox({
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.12}
             onDragEnd={(_, info) => {
-              if (info.offset.x > dragThreshold) goPrev()
-              else if (info.offset.x < -dragThreshold) goNext()
+              if (info.offset.x > dragThreshold) goNext()
+              else if (info.offset.x < -dragThreshold) goPrev()
             }}
-            initial={{ opacity: 0, x: 24 }}
+            initial={{ opacity: 0, x: -24 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -24 }}
+            exit={{ opacity: 0, x: 24 }}
             transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
             className="flex h-full min-h-0 w-full flex-col items-center"
           >
@@ -85,7 +85,7 @@ export default function GalleryLightbox({
                 <img
                   src={item.image}
                   alt={item.text || 'ذكرى'}
-                  className="max-h-full max-w-full rounded-2xl object-contain shadow-xl shadow-rose-200/50"
+                  className="theme-shadow-image block h-auto max-h-[calc(100dvh-12rem)] w-auto max-w-full rounded-2xl"
                   draggable={false}
                 />
               ) : (

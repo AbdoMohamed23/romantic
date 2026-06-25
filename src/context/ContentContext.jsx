@@ -11,6 +11,11 @@ import { musicAsset } from '../data/musicAsset'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { getSeedContent, nextItemId } from '../utils/contentMerge'
 import {
+  applySiteTheme,
+  readCachedAppearance,
+} from '../utils/theme'
+import ThemeApplier from '../components/ThemeApplier'
+import {
   getAdminPasswordForSync,
   isAudioFile,
   loadSiteContent,
@@ -20,6 +25,18 @@ import {
 } from '../utils/supabaseContent'
 
 const ContentContext = createContext(null)
+
+function createInitialContent() {
+  const seed = getSeedContent()
+  const cachedAppearance = readCachedAppearance()
+
+  if (cachedAppearance) {
+    seed.appearance = cachedAppearance
+  }
+
+  applySiteTheme(seed.appearance)
+  return seed
+}
 
 function resolveMusicSrc(content) {
   if (content.music.src === '') return ''
@@ -34,7 +51,7 @@ function resolveMusicSrc(content) {
 }
 
 export function ContentProvider({ children }) {
-  const [content, setContent] = useState(() => getSeedContent())
+  const [content, setContent] = useState(createInitialContent)
   const [isLoading, setIsLoading] = useState(isSupabaseConfigured)
   const [syncStatus, setSyncStatus] = useState(
     isSupabaseConfigured ? 'loading' : 'error',
@@ -53,6 +70,7 @@ export function ContentProvider({ children }) {
       try {
         const remote = await loadSiteContent()
         if (!cancelled) {
+          applySiteTheme(remote.appearance)
           setContent(remote)
           setSyncStatus('cloud')
           setSyncError('')
@@ -411,7 +429,10 @@ export function ContentProvider({ children }) {
   )
 
   return (
-    <ContentContext.Provider value={value}>{children}</ContentContext.Provider>
+    <ContentContext.Provider value={value}>
+      <ThemeApplier appearance={content.appearance} />
+      {children}
+    </ContentContext.Provider>
   )
 }
 

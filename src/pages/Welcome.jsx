@@ -26,7 +26,7 @@ export default function Welcome({ onNext, onIntroComplete }) {
       {introDone ? (
         <RevealGroup className="flex w-full flex-col items-center">
           <RevealItem>
-            <div className="heart-pulse mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-rose-400 to-pink-500 shadow-[0_0_32px_rgba(244,114,182,0.5)]">
+            <div className="heart-pulse theme-shadow-glow mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-rose-400 to-pink-500">
               <span className="text-2xl text-white">♥</span>
             </div>
           </RevealItem>
@@ -42,7 +42,7 @@ export default function Welcome({ onNext, onIntroComplete }) {
           </RevealItem>
 
           <RevealItem className="mt-8 w-full">
-            <div className="w-full rounded-3xl border border-white/60 bg-white/60 p-6 backdrop-blur-md">
+            <div className="content-card content-card-lg w-full">
               <WordByWord
                 text={welcome.subtitle}
                 wordDelay={config.animations.text.wordDelay}

@@ -12,6 +12,21 @@
       rel="stylesheet"
     />
     <title>هدية حب</title>
+    <script>
+      (function () {
+        try {
+          var raw = localStorage.getItem('romantic-site-theme-vars');
+          if (!raw) return;
+          var vars = JSON.parse(raw);
+          var root = document.documentElement;
+          for (var key in vars) {
+            if (Object.prototype.hasOwnProperty.call(vars, key)) {
+              root.style.setProperty(key, vars[key]);
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

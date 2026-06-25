@@ -46,7 +46,7 @@ export default function MusicPlayer() {
   return (
     <div
       dir="ltr"
-      className="w-full rounded-full border border-white/70 bg-[#f7f2ee]/95 px-3 py-2.5 shadow-[0_10px_32px_-10px_rgba(190,18,60,0.28)] backdrop-blur-md sm:px-4"
+      className="theme-music-shell w-full rounded-full px-3 py-2.5 sm:px-4"
     >
       <div className="flex items-center gap-2 sm:gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-rose-100 to-pink-200 ring-2 ring-white">
@@ -67,7 +67,7 @@ export default function MusicPlayer() {
           type="button"
           onClick={togglePlayback}
           disabled={!hasSource}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#d9a8ad] text-white shadow-md transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
+          className="theme-music-play flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white shadow-md transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
           aria-label={isPlaying ? 'إيقاف' : 'تشغيل'}
         >
           {isPlaying ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}

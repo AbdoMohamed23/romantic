@@ -4,11 +4,43 @@
   --font-sans: "Tajawal", "Cairo", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Cairo", "Tajawal", ui-sans-serif, sans-serif;
 
-  --color-blush-50: #fff5f7;
-  --color-blush-100: #ffe8ee;
-  --color-blush-200: #ffd1dc;
-  --color-rose-glow: #fb7185;
-  --color-rose-deep: #be123c;
+  --color-blush-50: var(--theme-50);
+  --color-blush-100: var(--theme-100);
+  --color-blush-200: var(--theme-200);
+  --color-rose-50: var(--theme-50);
+  --color-rose-100: var(--theme-100);
+  --color-rose-200: var(--theme-200);
+  --color-rose-300: var(--theme-300);
+  --color-rose-400: var(--theme-400);
+  --color-rose-500: var(--theme-500);
+  --color-rose-600: var(--theme-600);
+  --color-rose-700: var(--theme-700);
+  --color-rose-800: var(--theme-800);
+  --color-rose-900: var(--theme-900);
+  --color-rose-glow: var(--theme-400);
+  --color-rose-deep: var(--theme-700);
+  --color-pink-50: var(--theme-50);
+  --color-pink-100: var(--theme-100);
+  --color-pink-200: var(--theme-200);
+  --color-pink-300: var(--theme-300);
+  --color-pink-400: var(--theme-400);
+  --color-pink-500: var(--theme-500);
+}
+
+:root {
+  --theme-50: #fff5f7;
+  --theme-100: #ffe8ee;
+  --theme-200: #ffd1dc;
+  --theme-300: #fda4af;
+  --theme-400: #fb7185;
+  --theme-500: #f43f5e;
+  --theme-600: #e11d48;
+  --theme-700: #be123c;
+  --theme-800: #9f1239;
+  --theme-900: #881337;
+  --theme-rgb: 251, 113, 133;
+  --heart-opacity-min: 0.38;
+  --heart-opacity-max: 0.82;
 }
 
 html {
@@ -20,32 +52,32 @@ html {
 body {
   font-family: var(--font-sans);
   overflow-x: hidden;
-  color: #881337;
-  background-color: var(--color-blush-50);
+  color: var(--theme-800);
+  background-color: var(--theme-50);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 .romantic-bg {
   background:
-    radial-gradient(ellipse 80% 50% at 20% -10%, rgb(251 113 133 / 0.18), transparent),
-    radial-gradient(ellipse 60% 40% at 90% 10%, rgb(244 114 182 / 0.14), transparent),
-    radial-gradient(ellipse 70% 50% at 50% 100%, rgb(253 164 175 / 0.12), transparent),
-    linear-gradient(180deg, #fff5f7 0%, #fff0f5 45%, #ffffff 100%);
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgb(var(--theme-rgb) / 0.18), transparent),
+    radial-gradient(ellipse 60% 40% at 90% 10%, rgb(var(--theme-rgb) / 0.14), transparent),
+    radial-gradient(ellipse 70% 50% at 50% 100%, rgb(var(--theme-rgb) / 0.12), transparent),
+    linear-gradient(180deg, var(--theme-50) 0%, color-mix(in srgb, var(--theme-100) 65%, white) 45%, #ffffff 100%);
 }
 
 .glass-card {
   background: rgb(255 255 255 / 0.72);
   backdrop-filter: blur(16px);
   border: 1px solid rgb(255 255 255 / 0.8);
-  box-shadow: 0 8px 32px -8px rgb(244 114 182 / 0.25);
+  box-shadow: 0 8px 32px -8px rgb(var(--theme-rgb) / 0.25);
 }
 
 .polaroid-shadow {
   box-shadow:
-    0 4px 6px -1px rgb(190 18 60 / 0.08),
-    0 12px 24px -4px rgb(244 114 182 / 0.18),
-    0 0 0 1px rgb(255 228 235 / 0.6);
+    0 4px 6px -1px rgb(var(--theme-rgb) / 0.08),
+    0 12px 24px -4px rgb(var(--theme-rgb) / 0.18),
+    0 0 0 1px color-mix(in srgb, var(--theme-100) 80%, white);
 }
 
 @media (max-width: 640px) {
@@ -74,23 +106,23 @@ body {
   }
 
   ::-webkit-scrollbar-thumb {
-    background: rgb(251 113 133 / 0.45);
+    background: rgb(var(--theme-rgb) / 0.45);
     border-radius: 999px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: rgb(244 63 94 / 0.55);
+    background: rgb(var(--theme-rgb) / 0.55);
   }
 
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgb(251 113 133 / 0.45) transparent;
+    scrollbar-color: rgb(var(--theme-rgb) / 0.45) transparent;
   }
 }
 
 .romantic-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgb(251 113 133 / 0.45) transparent;
+  scrollbar-color: rgb(var(--theme-rgb) / 0.45) transparent;
 }
 
 .romantic-scrollbar::-webkit-scrollbar {
@@ -103,12 +135,95 @@ body {
 }
 
 .romantic-scrollbar::-webkit-scrollbar-thumb {
-  background: rgb(251 113 133 / 0.45);
+  background: rgb(var(--theme-rgb) / 0.45);
   border-radius: 999px;
 }
 
 .romantic-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgb(244 63 94 / 0.55);
+  background: rgb(var(--theme-rgb) / 0.55);
+}
+
+.theme-shadow-button {
+  box-shadow: 0 10px 32px -6px rgb(var(--theme-rgb) / 0.75);
+}
+
+.theme-shadow-card {
+  box-shadow: 0 8px 24px -8px rgb(var(--theme-rgb) / 0.3);
+}
+
+.theme-shadow-card-sm {
+  box-shadow: 0 0 20px rgb(var(--theme-rgb) / 0.35);
+}
+
+.theme-shadow-glow {
+  box-shadow: 0 0 32px rgb(var(--theme-rgb) / 0.5);
+}
+
+.theme-shadow-enter {
+  box-shadow: 0 24px 64px -20px rgb(var(--theme-rgb) / 0.45);
+}
+
+.theme-shadow-intro {
+  box-shadow: 0 0 80px rgb(var(--theme-rgb) / 0.45);
+}
+
+.theme-shadow-image {
+  box-shadow: 0 20px 40px -12px rgb(var(--theme-rgb) / 0.35);
+}
+
+.theme-music-shell {
+  background: color-mix(in srgb, white 70%, var(--theme-100));
+  border: 1px solid color-mix(in srgb, var(--theme-200) 80%, white);
+  box-shadow:
+    0 10px 32px -10px rgb(var(--theme-rgb) / 0.38),
+    0 0 0 1px rgb(var(--theme-rgb) / 0.1);
+  backdrop-filter: blur(14px);
+}
+
+.theme-music-play {
+  background: color-mix(in srgb, var(--theme-400) 75%, var(--theme-300));
+}
+
+.theme-lightbox-bg {
+  background: color-mix(in srgb, var(--theme-50) 94%, white);
+}
+
+.content-card {
+  width: 100%;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--theme-200) 65%, white);
+  background: linear-gradient(
+    to bottom right,
+    var(--theme-50),
+    color-mix(in srgb, var(--theme-100) 55%, white),
+    #ffffff
+  );
+  box-shadow: 0 8px 24px -8px rgb(var(--theme-rgb) / 0.3);
+  text-align: center;
+  padding: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .content-card {
+    padding: 1.5rem;
+  }
+}
+
+.content-card-lg {
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+}
+
+.timeline-connector-dot {
+  background: rgb(var(--theme-rgb) / 0.45);
+}
+
+.timeline-connector-line {
+  background: linear-gradient(to bottom, rgb(var(--theme-rgb) / 0.35), transparent);
+}
+
+.theme-shadow-badge {
+  box-shadow: 0 4px 14px -4px rgb(var(--theme-rgb) / 0.4);
 }
 
 @keyframes heart-pulse {

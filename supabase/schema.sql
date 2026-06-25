@@ -123,3 +123,31 @@ CREATE POLICY "romantic_assets_public_delete"
   FOR DELETE
   TO anon, authenticated
   USING (bucket_id = 'romantic-assets');
+
+-- ─── تحديثات JSON (شغّلها في SQL Editor لو المحتوى قديم) ───
+-- ملاحظة: مفيش تغيير في هيكل الجدول — كل الإعدادات داخل عمود data (JSONB)
+
+-- 1) الهوية البصرية (لون الموقع + شفافية القلوب)
+-- UPDATE public.site_content
+-- SET
+--   data = jsonb_set(
+--     COALESCE(data, '{}'::jsonb),
+--     '{appearance}',
+--     jsonb_build_object(
+--       'primaryColor', COALESCE(data->'appearance'->>'primaryColor', '#fb7185'),
+--       'heartOpacity', COALESCE((data->'appearance'->>'heartOpacity')::numeric, 0.65)
+--     ),
+--     true
+--   ),
+--   updated_at = now()
+-- WHERE id = 1;
+
+-- 2) معرض الصور المنفصل (اختياري — التطبيق يملأه من الذكريات لو فاضي)
+-- UPDATE public.site_content
+-- SET data = jsonb_set(COALESCE(data, '{}'::jsonb), '{galleryItems}', '[]'::jsonb, true)
+-- WHERE id = 1 AND data->'galleryItems' IS NULL;
+
+-- 3) زر القصة بدون إيموجي مكرر (اختياري)
+-- UPDATE public.site_content
+-- SET data = jsonb_set(data, '{story,memoriesButton}', '"Our Memories"'::jsonb, true)
+-- WHERE id = 1 AND data->'story'->>'memoriesButton' LIKE '%❤%';

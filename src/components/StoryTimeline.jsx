@@ -5,8 +5,8 @@ function CardConnector() {
   return (
     <div className="flex justify-center py-1" aria-hidden="true">
       <div className="flex flex-col items-center gap-1">
-        <span className="h-1.5 w-1.5 rounded-full bg-red-300/70" />
-        <span className="h-5 w-px bg-gradient-to-b from-red-200/80 to-transparent" />
+        <span className="timeline-connector-dot h-1.5 w-1.5 rounded-full" />
+        <span className="timeline-connector-line h-5 w-px" />
       </div>
     </div>
   )
@@ -23,7 +23,7 @@ function DateBadge({ date, highlight = false, className = '' }) {
       <span
         className={`rounded-full px-4 py-1.5 text-xs font-medium ${
           highlight
-            ? 'bg-gradient-to-r from-rose-400 to-pink-400 text-white shadow-md shadow-rose-200/60'
+            ? 'theme-shadow-badge bg-gradient-to-r from-rose-400 to-pink-400 text-white'
             : 'bg-rose-50 text-rose-500 ring-1 ring-rose-100'
         }`}
       >
@@ -42,7 +42,7 @@ export function TimelineMilestone({
   return (
     <>
       <RevealItem as="div" role="listitem" className="mx-auto w-full">
-        <article className="glass-card w-full rounded-2xl p-5 text-center sm:p-6">
+        <article className="content-card">
           <DateBadge date={date} className="mb-4" />
           <p className="text-sm font-medium text-rose-400">{label}</p>
           <div className="mt-4 text-sm leading-relaxed text-rose-600">{children}</div>
@@ -62,8 +62,8 @@ export function TimelineLoveConfession({
   return (
     <>
       <RevealItem as="div" role="listitem" className="mx-auto w-full">
-        <article className="w-full rounded-2xl border border-rose-200/60 bg-gradient-to-br from-rose-50 via-pink-50 to-white p-5 text-center shadow-[0_8px_24px_-8px_rgba(244,114,182,0.3)] sm:p-6">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-[0_0_20px_rgba(244,114,182,0.35)]">
+        <article className="content-card">
+          <div className="theme-shadow-card-sm mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white">
             <span className="text-xl text-rose-500">♥</span>
           </div>
 
@@ -100,16 +100,14 @@ export function TimelineMemoryCard({ memory, showConnector = true }) {
     <>
       <RevealItem as="div" role="listitem" className="mx-auto w-full">
         {hasImage ? (
-          <article className="w-full overflow-hidden rounded-2xl border border-rose-200/60 bg-white text-center shadow-[0_8px_24px_-8px_rgba(244,114,182,0.3)]">
-            <div className="aspect-[4/3] w-full bg-gradient-to-br from-blush-100 to-rose-100">
-              <img
-                src={memory.image}
-                alt={hasText ? memory.text : 'ذكرى'}
-                className="h-full w-full object-cover"
-                loading="lazy"
-                decoding="async"
-              />
-            </div>
+          <article className="theme-shadow-card w-full overflow-hidden rounded-2xl border border-rose-200/60 bg-white text-center">
+            <img
+              src={memory.image}
+              alt={hasText ? memory.text : 'ذكرى'}
+              className="block w-full h-auto"
+              loading="lazy"
+              decoding="async"
+            />
             {caption ? (
               <div className="px-4 py-3">
                 <DateBadge date={hasDate ? memory.date : null} className="mb-1.5" />
@@ -120,7 +118,7 @@ export function TimelineMemoryCard({ memory, showConnector = true }) {
             ) : null}
           </article>
         ) : (
-          <article className="glass-card w-full rounded-2xl p-5 text-center sm:p-6">
+          <article className="content-card">
             <DateBadge date={hasDate ? memory.date : null} className="mb-3" />
             {hasText ? (
               <p className="text-sm leading-relaxed text-rose-700">{memory.text}</p>
