@@ -83,6 +83,11 @@ VALUES (
     'audio/mp3',
     'audio/ogg',
     'audio/wav',
+    'audio/mp4',
+    'audio/aac',
+    'audio/flac',
+    'audio/webm',
+    'audio/opus',
     'application/octet-stream'
   ]
 )

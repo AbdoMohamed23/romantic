@@ -10,6 +10,7 @@ import {
   Music2,
   RotateCcw,
   Sparkles,
+  Trash2,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import HeartBackground from '../components/HeartBackground'
@@ -125,6 +126,7 @@ export default function Dashboard() {
     uploadMemoryImage,
     uploadGalleryImage,
     uploadMusic,
+    removeMusic,
     isMusicUploading,
     resetToDefaults,
     syncToCloud,
@@ -241,7 +243,12 @@ export default function Dashboard() {
                 {Math.round(content.music.volume * 100)}%
               </span>
             </Field>
-            <Field label="ملف الأغنية" hint={content.music.fileName}>
+            <Field label="ملف الأغنية" hint={content.music.fileName || 'لا يوجد ملف'}>
+              {syncError && activeTab === 'music' ? (
+                <p className="mb-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-600">
+                  {syncError}
+                </p>
+              ) : null}
               <label
                 className={`relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-6 text-sm transition ${
                   isMusicUploading
@@ -253,7 +260,7 @@ export default function Dashboard() {
                   <>
                     <span className="h-6 w-6 animate-spin rounded-full border-2 border-rose-200 border-t-rose-500" />
                     <span className="font-medium">جاري رفع الملف...</span>
-                    <span className="text-xs text-rose-400">انتظر لحظات</span>
+                    <span className="text-xs text-rose-400">لا تغلق الصفحة</span>
                   </>
                 ) : (
                   <>
@@ -273,7 +280,7 @@ export default function Dashboard() {
                     const file = e.target.files?.[0]
                     if (file) {
                       uploadMusic(file)
-                        .then(flashSaved)
+                        .then(() => flashSaved())
                         .catch(() => {})
                     }
                     e.target.value = ''
@@ -282,7 +289,22 @@ export default function Dashboard() {
               </label>
             </Field>
             {musicSrc ? (
-              <audio controls src={musicSrc} className="w-full" />
+              <div className="space-y-3">
+                <audio controls src={musicSrc} className="w-full" key={musicSrc} />
+                <button
+                  type="button"
+                  disabled={isMusicUploading}
+                  onClick={() => {
+                    removeMusic()
+                      .then(() => flashSaved())
+                      .catch(() => {})
+                  }}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-medium text-rose-500 transition hover:border-rose-300 hover:bg-rose-50 disabled:opacity-50"
+                >
+                  <Trash2 size={16} />
+                  حذف الأغنية
+                </button>
+              </div>
             ) : (
               <p className="text-sm text-rose-400">لا يوجد ملف موسيقى حالياً</p>
             )}
@@ -475,7 +497,13 @@ export default function Dashboard() {
                     flashSaved()
                   }}
                   onImageUpload={(id, file) => {
-                    uploadMemoryImage(id, file).then(flashSaved)
+                    uploadMemoryImage(id, file)
+                      .then(() => flashSaved())
+                      .catch(() => {})
+                  }}
+                  onImageRemove={(id) => {
+                    updateMemory(id, { image: '' })
+                    flashSaved()
                   }}
                   onRemove={removeMemory}
                   canRemove={content.memories.length > 1}
@@ -546,7 +574,13 @@ export default function Dashboard() {
                       flashSaved()
                     }}
                     onImageUpload={(id, file) => {
-                      uploadGalleryImage(id, file).then(flashSaved)
+                      uploadGalleryImage(id, file)
+                        .then(() => flashSaved())
+                        .catch(() => {})
+                    }}
+                    onImageRemove={(id) => {
+                      updateGalleryItem(id, { image: '' })
+                      flashSaved()
                     }}
                     onRemove={removeGalleryItem}
                     canRemove={(content.galleryItems ?? []).length > 0}

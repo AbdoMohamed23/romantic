@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
-import { Heart } from 'lucide-react'
 import { config } from '../data/config'
 import {
   createStaticHearts,
@@ -87,8 +86,9 @@ export default function FullscreenHeartReveal({ onComplete }) {
           <motion.div
             animate={{ scale: [1, 1.12, 1] }}
             transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+            className="text-6xl text-rose-400"
           >
-            <Heart size={72} className="text-rose-400" fill="currentColor" />
+            ♥
           </motion.div>
         </motion.div>
       </div>

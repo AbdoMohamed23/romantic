@@ -143,7 +143,21 @@ export async function uploadAsset(file, folder) {
 
   const extension = prepared.name.split('.').pop()?.toLowerCase() || 'bin'
   const path = `${folder}/${crypto.randomUUID()}.${extension}`
-  const contentType = guessMimeType(prepared)
+  let contentType = guessMimeType(prepared)
+
+  if (folder === 'music') {
+    const allowedAudio = new Set([
+      'audio/mpeg',
+      'audio/mp3',
+      'audio/ogg',
+      'audio/wav',
+      'application/octet-stream',
+    ])
+
+    if (!allowedAudio.has(contentType)) {
+      contentType = 'application/octet-stream'
+    }
+  }
 
   const { error } = await supabase.storage.from(ASSETS_BUCKET).upload(path, prepared, {
     cacheControl: '31536000',

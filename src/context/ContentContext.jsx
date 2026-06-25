@@ -22,7 +22,14 @@ import {
 const ContentContext = createContext(null)
 
 function resolveMusicSrc(content) {
-  if (content.music.src?.startsWith('http')) return content.music.src
+  if (content.music.src === '') return ''
+
+  if (content.music.src?.startsWith('http')) {
+    const version = encodeURIComponent(content.music.fileName || 'track')
+    const joiner = content.music.src.includes('?') ? '&' : '?'
+    return `${content.music.src}${joiner}v=${version}`
+  }
+
   return musicAsset || ''
 }
 
@@ -68,14 +75,16 @@ export function ContentProvider({ children }) {
 
   const persist = useCallback(async (next) => {
     if (!isSupabaseConfigured) {
-      setSyncError('Supabase غير مُعدّ — لا يمكن الحفظ')
-      return
+      const message = 'Supabase غير مُعدّ — لا يمكن الحفظ'
+      setSyncError(message)
+      throw new Error(message)
     }
 
     const password = getAdminPasswordForSync()
     if (!password) {
-      setSyncError('سجّل دخول الداشبورد لحفظ التغييرات')
-      return
+      const message = 'سجّل دخول الداشبورد لحفظ التغييرات'
+      setSyncError(message)
+      throw new Error(message)
     }
 
     setContent(next)
@@ -85,6 +94,7 @@ export function ContentProvider({ children }) {
       setContent(saved)
       setSyncStatus('cloud')
       setSyncError('')
+      return saved
     } catch (error) {
       setSyncStatus('error')
       setSyncError(
@@ -271,6 +281,13 @@ export function ContentProvider({ children }) {
         throw error
       }
 
+      const password = getAdminPasswordForSync()
+      if (!password) {
+        const error = new Error('سجّل دخول الداشبورد لحفظ التغييرات')
+        setSyncError(error.message)
+        throw error
+      }
+
       setIsMusicUploading(true)
       setSyncError('')
 
@@ -285,14 +302,39 @@ export function ContentProvider({ children }) {
           },
         })
       } catch (error) {
-        setSyncError(error.message || 'فشل رفع الأغنية')
-        throw error
+        const message =
+          error.message?.includes('mime') || error.message?.includes('not allowed')
+            ? 'نوع الملف غير مدعوم على السيرفر — جرّب mp3 أو wav'
+            : error.message || 'فشل رفع الأغنية'
+        setSyncError(message)
+        throw new Error(message)
       } finally {
         setIsMusicUploading(false)
       }
     },
     [content, persist],
   )
+
+  const removeMusic = useCallback(async () => {
+    setIsMusicUploading(true)
+    setSyncError('')
+
+    try {
+      await persist({
+        ...content,
+        music: {
+          ...content.music,
+          src: '',
+          fileName: '',
+        },
+      })
+    } catch (error) {
+      setSyncError(error.message || 'فشل حذف الأغنية')
+      throw error
+    } finally {
+      setIsMusicUploading(false)
+    }
+  }, [content, persist])
 
   const resetToDefaults = useCallback(async () => {
     const next = structuredClone(defaultContent)
@@ -337,6 +379,7 @@ export function ContentProvider({ children }) {
       uploadMemoryImage,
       uploadGalleryImage,
       uploadMusic,
+      removeMusic,
       resetToDefaults,
       syncToCloud,
     }),
@@ -360,6 +403,7 @@ export function ContentProvider({ children }) {
       uploadMemoryImage,
       uploadGalleryImage,
       uploadMusic,
+      removeMusic,
       isMusicUploading,
       resetToDefaults,
       syncToCloud,

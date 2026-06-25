@@ -1,4 +1,4 @@
-import { Heart, Pause, Play, SkipBack, SkipForward } from 'lucide-react'
+import { Pause, Play, SkipBack, SkipForward } from 'lucide-react'
 import { useMusic } from '../context/MusicContext'
 
 function Waveform({ isPlaying }) {
@@ -50,7 +50,7 @@ export default function MusicPlayer() {
     >
       <div className="flex items-center gap-2 sm:gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-rose-100 to-pink-200 ring-2 ring-white">
-          <Heart size={16} className="text-rose-500" fill="currentColor" />
+          <span className="text-lg text-rose-500">♥</span>
         </div>
 
         <button

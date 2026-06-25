@@ -1,4 +1,4 @@
-import { ImagePlus, Trash2 } from 'lucide-react'
+import { ImagePlus, Trash2, X } from 'lucide-react'
 import { DateInput, Field, TextArea } from './DashboardFields'
 
 export default function MemoryEditor({
@@ -6,6 +6,7 @@ export default function MemoryEditor({
   index,
   onChange,
   onImageUpload,
+  onImageRemove,
   onRemove,
   canRemove,
   itemLabel = 'ذكرى',
@@ -35,13 +36,23 @@ export default function MemoryEditor({
       >
         {showImage ? (
           <div>
-            <div className="aspect-square overflow-hidden rounded-xl bg-gradient-to-br from-blush-100 to-rose-100">
+            <div className="relative aspect-square overflow-hidden rounded-xl bg-gradient-to-br from-blush-100 to-rose-100">
               {memory.image ? (
-                <img
-                  src={memory.image}
-                  alt=""
-                  className="h-full w-full object-cover"
-                />
+                <>
+                  <img
+                    src={memory.image}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => onImageRemove?.(memory.id)}
+                    className="absolute end-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/55 text-white shadow-md transition hover:bg-rose-600"
+                    aria-label="حذف الصورة"
+                  >
+                    <X size={14} />
+                  </button>
+                </>
               ) : (
                 <div className="flex h-full items-center justify-center text-2xl text-rose-300">
                   ♥
