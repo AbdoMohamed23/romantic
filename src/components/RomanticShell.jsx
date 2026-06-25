@@ -18,7 +18,7 @@ export default function RomanticShell({ children, showMusic = false }) {
 
       <div className="relative z-10 flex min-h-dvh flex-col">
         <main
-          className="flex w-full flex-1 flex-col items-center justify-center overflow-x-hidden px-5 py-10 sm:px-6"
+          className="flex w-full flex-1 flex-col items-center justify-start overflow-x-hidden px-5 py-10 sm:px-6"
           style={{
             paddingBottom: 'calc(6.5rem + env(safe-area-inset-bottom))',
           }}

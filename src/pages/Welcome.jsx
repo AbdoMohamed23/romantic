@@ -27,7 +27,7 @@ export default function Welcome({ onNext, onIntroComplete }) {
         <RevealGroup className="flex w-full flex-col items-center">
           <RevealItem>
             <div className="heart-pulse mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-rose-400 to-pink-500 shadow-[0_0_32px_rgba(244,114,182,0.5)]">
-              <span className="text-3xl text-rose-100">♥</span>
+              <span className="text-2xl text-white">♥</span>
             </div>
           </RevealItem>
 

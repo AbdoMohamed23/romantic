@@ -45,7 +45,7 @@ export const defaultContent = {
       message:
         'ثلاث كلمات صغيرة — وفجأة أصبح العالم أدفأ، وأنعم، وأجمل بلا حدود.',
     },
-    memoriesButton: 'Our Memories ❤️',
+    memoriesButton: 'Our Memories',
   },
   gallery: {
     eyebrow: 'Our Album',

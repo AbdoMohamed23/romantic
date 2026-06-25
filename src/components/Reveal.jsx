@@ -60,6 +60,7 @@ export function RevealItem({
   className = '',
   as = 'div',
   delay = 0,
+  ...rest
 }) {
   const inGroup = useContext(RevealContext)
   const reveal = getRevealMotion()
@@ -68,7 +69,7 @@ export function RevealItem({
 
   if (inGroup) {
     return (
-      <Component className={className} variants={variants}>
+      <Component className={className} variants={variants} {...rest}>
         {children}
       </Component>
     )
@@ -80,6 +81,7 @@ export function RevealItem({
       initial="hidden"
       animate="visible"
       variants={variants}
+      {...rest}
     >
       {children}
     </Component>

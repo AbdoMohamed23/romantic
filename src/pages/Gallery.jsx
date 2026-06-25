@@ -35,7 +35,7 @@ export default function Gallery({ onNext }) {
       </RevealItem>
 
       {hasItems ? (
-        <RevealGroup className="grid w-full grid-cols-2 justify-items-center gap-4 sm:gap-5">
+        <RevealGroup className="grid w-full grid-cols-2 justify-items-center gap-5 sm:gap-6">
           {items.map((item, index) => (
             <RevealItem key={item.id} className="w-full">
               <GalleryCard item={item} index={index} onOpen={setLightboxIndex} />

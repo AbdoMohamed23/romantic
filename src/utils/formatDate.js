@@ -1,8 +1,12 @@
 export function formatDateLong(dateString) {
   if (!dateString) return null
-  return new Intl.DateTimeFormat('ar-EG', {
-    day: 'numeric',
-    month: 'long',
+
+  const date = new Date(dateString)
+  if (Number.isNaN(date.getTime())) return null
+
+  return new Intl.DateTimeFormat('en-US', {
+    month: '2-digit',
+    day: '2-digit',
     year: 'numeric',
-  }).format(new Date(dateString))
+  }).format(date)
 }

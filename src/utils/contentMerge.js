@@ -1,5 +1,10 @@
 import { defaultContent } from '../data/defaultContent'
 
+function withoutTrailingHeart(text) {
+  if (typeof text !== 'string') return text
+  return text.replace(/\s*(?:❤️|❤|♥|💕|💖|💗|💓|💝)\s*$/u, '').trimEnd()
+}
+
 function mergeSection(base, patch) {
   if (!patch) return base
   if (Array.isArray(base)) return patch
@@ -42,6 +47,9 @@ export function mergeContent(stored) {
     story: {
       ...defaultContent.story,
       ...stored.story,
+      memoriesButton: withoutTrailingHeart(
+        stored.story?.memoriesButton ?? defaultContent.story.memoriesButton,
+      ),
       firstMeeting: mergeSection(
         defaultContent.story.firstMeeting,
         stored.story?.firstMeeting,
