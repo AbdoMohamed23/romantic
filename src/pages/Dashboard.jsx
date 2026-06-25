@@ -9,6 +9,7 @@ import {
   LogOut,
   Music2,
   RotateCcw,
+  Save,
   Sparkles,
   Trash2,
 } from 'lucide-react'
@@ -24,6 +25,7 @@ import {
 } from '../components/dashboard/DashboardFields'
 import { useContent } from '../context/ContentContext'
 import { useAdminAuth, grantVisitorPreviewAccess } from '../hooks/useAuth'
+import { getAdminPasswordForSync } from '../utils/supabaseContent'
 
 const TABS = [
   { id: 'general', label: 'عام', icon: KeyRound },
@@ -37,17 +39,45 @@ const TABS = [
 ]
 
 function AdminLoginForm({ onLogin }) {
-  const { content } = useContent()
+  const { content, isLoading, isSupabaseConfigured, verifyPassword } = useContent()
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    if (password !== content.password) {
-      setError('كلمة المرور غير صحيحة')
+
+    if (isLoading || submitting) return
+
+    if (!isSupabaseConfigured) {
+      setError('تعذّر الاتصال بالخادم')
       return
     }
-    onLogin(password)
+
+    setSubmitting(true)
+    setError('')
+
+    try {
+      const isValid = await verifyPassword(password)
+      if (!isValid) {
+        setError('كلمة المرور غير صحيحة')
+        return
+      }
+
+      await onLogin(password)
+    } catch {
+      setError('تعذّر التحقق — حاول مرة أخرى')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="romantic-bg relative flex min-h-dvh items-center justify-center">
+        <p className="text-sm text-rose-500">جاري تحميل المحتوى...</p>
+      </div>
+    )
   }
 
   return (
@@ -88,9 +118,10 @@ function AdminLoginForm({ onLogin }) {
             ) : null}
             <button
               type="submit"
-              className="w-full rounded-xl bg-gradient-to-r from-rose-400 to-pink-400 py-3 text-sm font-semibold text-white shadow-md"
+              disabled={submitting}
+              className="w-full rounded-xl bg-gradient-to-r from-rose-400 to-pink-400 py-3 text-sm font-semibold text-white shadow-md disabled:opacity-70"
             >
-              دخول
+              {submitting ? 'جاري التحقق...' : 'دخول'}
             </button>
           </form>
 
@@ -110,6 +141,7 @@ export default function Dashboard() {
   const {
     content,
     musicSrc,
+    isDirty,
     syncStatus,
     syncError,
     isSupabaseConfigured,
@@ -129,21 +161,29 @@ export default function Dashboard() {
     removeMusic,
     isMusicUploading,
     resetToDefaults,
-    syncToCloud,
+    saveChanges,
   } = useContent()
   const [activeTab, setActiveTab] = useState('general')
-  const [savedFlash, setSavedFlash] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveMessage, setSaveMessage] = useState('')
 
-  const handleAdminLogin = async (password) => {
+  const handleAdminLogin = (password) => {
     adminLoginWithPassword(password)
-    if (isSupabaseConfigured) {
-      await syncToCloud(password)
-    }
   }
 
-  const flashSaved = () => {
-    setSavedFlash(true)
-    window.setTimeout(() => setSavedFlash(false), 1500)
+  const handleSave = async () => {
+    setIsSaving(true)
+    setSaveMessage('')
+
+    try {
+      await saveChanges(getAdminPasswordForSync())
+      setSaveMessage('تم الحفظ على قاعدة البيانات')
+      window.setTimeout(() => setSaveMessage(''), 2500)
+    } catch {
+      // syncError يُعرض في الهيدر
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handlePreview = () => {
@@ -168,7 +208,6 @@ export default function Dashboard() {
                 value={content.siteName}
                 onChange={(v) => {
                   updateRoot('siteName', v)
-                  flashSaved()
                 }}
               />
             </Field>
@@ -177,7 +216,6 @@ export default function Dashboard() {
                 value={content.password}
                 onChange={(v) => {
                   updateRoot('password', v)
-                  flashSaved()
                 }}
               />
             </Field>
@@ -186,7 +224,6 @@ export default function Dashboard() {
                 value={content.dates.relationshipStart}
                 onChange={(v) => {
                   updateDate('relationshipStart', `${v}T00:00:00`)
-                  flashSaved()
                 }}
               />
             </Field>
@@ -195,7 +232,6 @@ export default function Dashboard() {
                 value={content.dates.firstMeeting}
                 onChange={(v) => {
                   updateDate('firstMeeting', v)
-                  flashSaved()
                 }}
               />
             </Field>
@@ -204,7 +240,6 @@ export default function Dashboard() {
                 value={content.dates.loveConfession}
                 onChange={(v) => {
                   updateDate('loveConfession', v)
-                  flashSaved()
                 }}
               />
             </Field>
@@ -228,7 +263,6 @@ export default function Dashboard() {
                   value={content.appearance?.primaryColor || '#fb7185'}
                   onChange={(e) => {
                     updateField('appearance', 'primaryColor', e.target.value)
-                    flashSaved()
                   }}
                   className="h-11 w-14 cursor-pointer rounded-xl border border-rose-100 bg-white p-1"
                 />
@@ -237,7 +271,6 @@ export default function Dashboard() {
                   onChange={(v) => {
                     if (/^#[0-9a-fA-F]{6}$/.test(v)) {
                       updateField('appearance', 'primaryColor', v)
-                      flashSaved()
                     }
                   }}
                 />
@@ -262,7 +295,6 @@ export default function Dashboard() {
                 value={content.appearance?.heartOpacity ?? 0.65}
                 onChange={(e) => {
                   updateField('appearance', 'heartOpacity', Number(e.target.value))
-                  flashSaved()
                 }}
                 className="w-full accent-rose-400"
               />
@@ -279,7 +311,6 @@ export default function Dashboard() {
                     type="button"
                     onClick={() => {
                       updateField('appearance', 'primaryColor', color)
-                      flashSaved()
                     }}
                     className="h-8 w-8 rounded-full border-2 border-white shadow-sm ring-1 ring-rose-100 transition hover:scale-110"
                     style={{ backgroundColor: color }}
@@ -302,7 +333,6 @@ export default function Dashboard() {
                 value={content.music.title}
                 onChange={(v) => {
                   updateField('music', 'title', v)
-                  flashSaved()
                 }}
               />
             </Field>
@@ -315,7 +345,6 @@ export default function Dashboard() {
                 value={content.music.volume}
                 onChange={(e) => {
                   updateField('music', 'volume', Number(e.target.value))
-                  flashSaved()
                 }}
                 className="w-full accent-rose-400"
               />
@@ -359,9 +388,7 @@ export default function Dashboard() {
                   onChange={(e) => {
                     const file = e.target.files?.[0]
                     if (file) {
-                      uploadMusic(file)
-                        .then(() => flashSaved())
-                        .catch(() => {})
+                      uploadMusic(file).catch(() => {})
                     }
                     e.target.value = ''
                   }}
@@ -374,11 +401,7 @@ export default function Dashboard() {
                 <button
                   type="button"
                   disabled={isMusicUploading}
-                  onClick={() => {
-                    removeMusic()
-                      .then(() => flashSaved())
-                      .catch(() => {})
-                  }}
+                  onClick={() => removeMusic()}
                   className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-medium text-rose-500 transition hover:border-rose-300 hover:bg-rose-50 disabled:opacity-50"
                 >
                   <Trash2 size={16} />
@@ -413,7 +436,6 @@ export default function Dashboard() {
                     value={content.login[key]}
                     onChange={(v) => {
                       updateField('login', key, v)
-                      flashSaved()
                     }}
                   />
                 ) : (
@@ -421,7 +443,6 @@ export default function Dashboard() {
                     value={content.login[key]}
                     onChange={(v) => {
                       updateField('login', key, v)
-                      flashSaved()
                     }}
                   />
                 )}
@@ -438,7 +459,6 @@ export default function Dashboard() {
                 value={content.welcome.eyebrow}
                 onChange={(v) => {
                   updateField('welcome', 'eyebrow', v)
-                  flashSaved()
                 }}
               />
             </Field>
@@ -447,7 +467,6 @@ export default function Dashboard() {
                 value={content.welcome.title}
                 onChange={(v) => {
                   updateField('welcome', 'title', v)
-                  flashSaved()
                 }}
               />
             </Field>
@@ -456,7 +475,6 @@ export default function Dashboard() {
                 value={content.welcome.subtitle}
                 onChange={(v) => {
                   updateField('welcome', 'subtitle', v)
-                  flashSaved()
                 }}
                 rows={4}
               />
@@ -466,7 +484,6 @@ export default function Dashboard() {
                 value={content.welcome.nextButton}
                 onChange={(v) => {
                   updateField('welcome', 'nextButton', v)
-                  flashSaved()
                 }}
               />
             </Field>
@@ -481,7 +498,6 @@ export default function Dashboard() {
                 value={content.story.eyebrow}
                 onChange={(v) => {
                   updateField('story', 'eyebrow', v)
-                  flashSaved()
                 }}
               />
             </Field>
@@ -490,7 +506,6 @@ export default function Dashboard() {
                 value={content.story.title}
                 onChange={(v) => {
                   updateField('story', 'title', v)
-                  flashSaved()
                 }}
               />
             </Field>
@@ -503,7 +518,6 @@ export default function Dashboard() {
                     value={content.story.firstMeeting.label}
                     onChange={(v) => {
                       updateNestedField('story', 'firstMeeting', 'label', v)
-                      flashSaved()
                     }}
                   />
                 </Field>
@@ -512,7 +526,6 @@ export default function Dashboard() {
                     value={content.story.firstMeeting.description}
                     onChange={(v) => {
                       updateNestedField('story', 'firstMeeting', 'description', v)
-                      flashSaved()
                     }}
                   />
                 </Field>
@@ -527,7 +540,6 @@ export default function Dashboard() {
                     value={content.story.loveConfession.label}
                     onChange={(v) => {
                       updateNestedField('story', 'loveConfession', 'label', v)
-                      flashSaved()
                     }}
                   />
                 </Field>
@@ -536,7 +548,6 @@ export default function Dashboard() {
                     value={content.story.loveConfession.message}
                     onChange={(v) => {
                       updateNestedField('story', 'loveConfession', 'message', v)
-                      flashSaved()
                     }}
                   />
                 </Field>
@@ -548,7 +559,6 @@ export default function Dashboard() {
                 value={content.story.memoriesButton}
                 onChange={(v) => {
                   updateField('story', 'memoriesButton', v)
-                  flashSaved()
                 }}
               />
             </Field>
@@ -574,16 +584,12 @@ export default function Dashboard() {
                   imageHint="صورة اختيارية (تُضغط تلقائياً)"
                   onChange={(id, patch) => {
                     updateMemory(id, patch)
-                    flashSaved()
                   }}
                   onImageUpload={(id, file) => {
-                    uploadMemoryImage(id, file)
-                      .then(() => flashSaved())
-                      .catch(() => {})
+                    uploadMemoryImage(id, file).catch(() => {})
                   }}
                   onImageRemove={(id) => {
                     updateMemory(id, { image: '' })
-                    flashSaved()
                   }}
                   onRemove={removeMemory}
                   canRemove={content.memories.length > 1}
@@ -594,7 +600,6 @@ export default function Dashboard() {
               type="button"
               onClick={() => {
                 addMemory()
-                flashSaved()
               }}
               className="w-full rounded-xl border border-dashed border-rose-200 py-3 text-sm font-medium text-rose-500 transition hover:border-rose-300 hover:bg-rose-50"
             >
@@ -612,7 +617,6 @@ export default function Dashboard() {
                   value={content.gallery.eyebrow}
                   onChange={(v) => {
                     updateField('gallery', 'eyebrow', v)
-                    flashSaved()
                   }}
                 />
               </Field>
@@ -621,7 +625,6 @@ export default function Dashboard() {
                   value={content.gallery.title}
                   onChange={(v) => {
                     updateField('gallery', 'title', v)
-                    flashSaved()
                   }}
                 />
               </Field>
@@ -630,7 +633,6 @@ export default function Dashboard() {
                   value={content.gallery.finalButton}
                   onChange={(v) => {
                     updateField('gallery', 'finalButton', v)
-                    flashSaved()
                   }}
                 />
               </Field>
@@ -651,16 +653,12 @@ export default function Dashboard() {
                     imageHint="رفع صورة"
                     onChange={(id, patch) => {
                       updateGalleryItem(id, patch)
-                      flashSaved()
                     }}
                     onImageUpload={(id, file) => {
-                      uploadGalleryImage(id, file)
-                        .then(() => flashSaved())
-                        .catch(() => {})
+                      uploadGalleryImage(id, file).catch(() => {})
                     }}
                     onImageRemove={(id) => {
                       updateGalleryItem(id, { image: '' })
-                      flashSaved()
                     }}
                     onRemove={removeGalleryItem}
                     canRemove={(content.galleryItems ?? []).length > 0}
@@ -671,7 +669,6 @@ export default function Dashboard() {
                 type="button"
                 onClick={() => {
                   addGalleryItem()
-                  flashSaved()
                 }}
                 className="w-full rounded-xl border border-dashed border-rose-200 py-3 text-sm font-medium text-rose-500 transition hover:border-rose-300 hover:bg-rose-50"
               >
@@ -690,7 +687,6 @@ export default function Dashboard() {
                 value={content.final.eyebrow}
                 onChange={(v) => {
                   updateField('final', 'eyebrow', v)
-                  flashSaved()
                 }}
               />
             </Field>
@@ -699,7 +695,6 @@ export default function Dashboard() {
                 value={content.final.title}
                 onChange={(v) => {
                   updateField('final', 'title', v)
-                  flashSaved()
                 }}
               />
             </Field>
@@ -708,7 +703,6 @@ export default function Dashboard() {
                 value={content.final.text}
                 onChange={(v) => {
                   updateField('final', 'text', v)
-                  flashSaved()
                 }}
                 rows={6}
               />
@@ -733,11 +727,14 @@ export default function Dashboard() {
               لوحة التحكم
             </h1>
             <p className="text-sm text-rose-500">
-              {savedFlash ? '✓ تم الحفظ تلقائياً' : 'التغييرات تُحفظ فوراً'}
+              {saveMessage ||
+                (isDirty
+                  ? '● لديك تغييرات غير محفوظة — اضغط «حفظ»'
+                  : '✓ المحتوى محفوظ على قاعدة البيانات')}
               {isSupabaseConfigured ? (
                 <span className="mt-1 block text-xs">
-                  {syncStatus === 'loading' && '⏳ جاري التحميل من Supabase...'}
-                  {syncStatus === 'cloud' && '☁️ المحتوى من Supabase'}
+                  {syncStatus === 'loading' && '⏳ جاري التحميل من قاعدة البيانات...'}
+                  {syncStatus === 'saving' && '💾 جاري الحفظ...'}
                   {syncStatus === 'error' && '⚠️ مشكلة في الاتصال'}
                   {syncError ? ` — ${syncError}` : ''}
                 </span>
@@ -751,6 +748,15 @@ export default function Dashboard() {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
+              onClick={handleSave}
+              disabled={isSaving || syncStatus === 'loading' || !isDirty}
+              className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-rose-400 to-pink-400 px-4 py-2 text-xs font-semibold text-white shadow-md transition hover:from-rose-500 hover:to-pink-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Save size={14} />
+              {isSaving ? 'جاري الحفظ...' : 'حفظ'}
+            </button>
+            <button
+              type="button"
               onClick={handlePreview}
               className="flex items-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-medium text-rose-600 transition hover:bg-rose-50"
             >
@@ -762,7 +768,6 @@ export default function Dashboard() {
               onClick={() => {
                 if (window.confirm('استعادة كل المحتوى للقيم الافتراضية؟')) {
                   resetToDefaults()
-                  flashSaved()
                 }
               }}
               className="flex items-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-medium text-rose-500 transition hover:bg-rose-50"

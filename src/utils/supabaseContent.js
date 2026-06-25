@@ -54,6 +54,19 @@ export async function fetchRemoteContent() {
   return mergeContent(data)
 }
 
+export async function verifySitePassword(password) {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('تعذّر الاتصال بالخادم')
+  }
+
+  const { data, error } = await supabase.rpc('verify_site_password', {
+    p_password: password,
+  })
+
+  if (error) throw error
+  return Boolean(data)
+}
+
 export async function saveRemoteContent(content, password) {
   if (!isSupabaseConfigured || !supabase) {
     throw new Error('تعذّر الاتصال بالخادم')

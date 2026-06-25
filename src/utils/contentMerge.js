@@ -40,7 +40,10 @@ export function mergeContent(stored) {
     ...defaultContent,
     ...stored,
     siteName: stored.siteName || defaultContent.siteName,
-    password: stored.password ?? defaultContent.password,
+    password:
+      typeof stored.password === 'string'
+        ? stored.password.trim()
+        : defaultContent.password,
     dates: mergeSection(defaultContent.dates, stored.dates),
     music: mergeSection(defaultContent.music, stored.music),
     login: mergeSection(defaultContent.login, stored.login),

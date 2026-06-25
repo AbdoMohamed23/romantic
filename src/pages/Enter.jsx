@@ -8,19 +8,45 @@ export default function Enter({ onLogin }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [shake, setShake] = useState(false)
-  const { content } = useContent()
+  const [submitting, setSubmitting] = useState(false)
+  const { content, isLoading, isSupabaseConfigured, verifyPassword } = useContent()
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
 
-    if (password !== content.password) {
-      setError(content.login.error)
-      setShake(true)
-      window.setTimeout(() => setShake(false), 450)
+    if (isLoading || submitting) return
+
+    if (!isSupabaseConfigured) {
+      setError('تعذّر الاتصال بالخادم — تحقق من إعدادات Supabase')
       return
     }
 
-    onLogin()
+    setSubmitting(true)
+    setError('')
+
+    try {
+      const isValid = await verifyPassword(password)
+      if (!isValid) {
+        setError(content.login.error)
+        setShake(true)
+        window.setTimeout(() => setShake(false), 450)
+        return
+      }
+
+      onLogin()
+    } catch {
+      setError('تعذّر التحقق من كلمة المرور — حاول مرة أخرى')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <FlowPage variant="center">
+        <p className="text-sm text-rose-500">جاري تحميل المحتوى...</p>
+      </FlowPage>
+    )
   }
 
   return (
@@ -63,6 +89,7 @@ export default function Enter({ onLogin }) {
                   placeholder={content.login.placeholder}
                   className="w-full rounded-2xl border border-rose-100 bg-white px-4 py-3.5 text-center text-rose-800 shadow-inner outline-none transition placeholder:text-rose-300 focus:border-rose-300 focus:ring-4 focus:ring-rose-100"
                   autoComplete="current-password"
+                  disabled={submitting}
                 />
               </label>
 
@@ -77,10 +104,11 @@ export default function Enter({ onLogin }) {
 
               <button
                 type="submit"
-                className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-rose-400 to-pink-400 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-rose-200/80 transition hover:from-rose-500 hover:to-pink-500 active:scale-[0.98]"
+                disabled={submitting}
+                className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-rose-400 to-pink-400 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-rose-200/80 transition hover:from-rose-500 hover:to-pink-500 active:scale-[0.98] disabled:opacity-70"
               >
                 <Sparkles size={16} className="transition group-hover:rotate-12" />
-                {content.login.button}
+                {submitting ? 'جاري التحقق...' : content.login.button}
               </button>
             </form>
           </div>

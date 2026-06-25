@@ -4,38 +4,29 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 import { defaultContent } from '../data/defaultContent'
 import { musicAsset } from '../data/musicAsset'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { getSeedContent, nextItemId } from '../utils/contentMerge'
-import {
-  applySiteTheme,
-  readCachedAppearance,
-} from '../utils/theme'
+import { applySiteTheme } from '../utils/theme'
 import ThemeApplier from '../components/ThemeApplier'
 import {
   getAdminPasswordForSync,
   isAudioFile,
   loadSiteContent,
-  pushContentToCloud,
   saveRemoteContent,
+  setAdminPasswordForSync,
   uploadAsset,
+  verifySitePassword,
 } from '../utils/supabaseContent'
 
 const ContentContext = createContext(null)
 
 function createInitialContent() {
-  const seed = getSeedContent()
-  const cachedAppearance = readCachedAppearance()
-
-  if (cachedAppearance) {
-    seed.appearance = cachedAppearance
-  }
-
-  applySiteTheme(seed.appearance)
-  return seed
+  return getSeedContent()
 }
 
 function resolveMusicSrc(content) {
@@ -53,6 +44,7 @@ function resolveMusicSrc(content) {
 export function ContentProvider({ children }) {
   const [content, setContent] = useState(createInitialContent)
   const [isLoading, setIsLoading] = useState(isSupabaseConfigured)
+  const [isDirty, setIsDirty] = useState(false)
   const [syncStatus, setSyncStatus] = useState(
     isSupabaseConfigured ? 'loading' : 'error',
   )
@@ -60,250 +52,251 @@ export function ContentProvider({ children }) {
     isSupabaseConfigured ? '' : 'تعذّر الاتصال بالخادم',
   )
   const [isMusicUploading, setIsMusicUploading] = useState(false)
+  const contentRef = useRef(content)
 
   useEffect(() => {
-    if (!isSupabaseConfigured) return
+    contentRef.current = content
+  }, [content])
 
-    let cancelled = false
-
-    async function load() {
-      try {
-        const remote = await loadSiteContent()
-        if (!cancelled) {
-          applySiteTheme(remote.appearance)
-          setContent(remote)
-          setSyncStatus('cloud')
-          setSyncError('')
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setSyncStatus('error')
-          setSyncError(error.message || 'تعذّر تحميل المحتوى من Supabase')
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false)
-      }
-    }
-
-    load()
-    return () => {
-      cancelled = true
-    }
+  const patchContent = useCallback((updater) => {
+    setContent((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater
+      contentRef.current = next
+      return next
+    })
+    setIsDirty(true)
+    setSyncStatus((status) => (status === 'error' ? 'error' : 'ready'))
   }, [])
 
-  const persist = useCallback(async (next) => {
+  const applyLoadedContent = useCallback((remote) => {
+    applySiteTheme(remote.appearance)
+    contentRef.current = remote
+    setContent(remote)
+    setIsDirty(false)
+    setSyncStatus('ready')
+    setSyncError('')
+  }, [])
+
+  const loadFromDatabase = useCallback(async () => {
+    if (!isSupabaseConfigured) {
+      throw new Error('Supabase غير مُعدّ')
+    }
+
+    setSyncStatus('loading')
+    setSyncError('')
+
+    try {
+      const remote = await loadSiteContent()
+      applyLoadedContent(remote)
+      return remote
+    } catch (error) {
+      setSyncStatus('error')
+      setSyncError(error.message || 'تعذّر تحميل المحتوى من Supabase')
+      throw error
+    } finally {
+      setIsLoading(false)
+    }
+  }, [applyLoadedContent])
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setIsLoading(false)
+      return
+    }
+
+    loadFromDatabase().catch(() => {})
+  }, [loadFromDatabase])
+
+  const saveChanges = useCallback(async (password = getAdminPasswordForSync()) => {
     if (!isSupabaseConfigured) {
       const message = 'Supabase غير مُعدّ — لا يمكن الحفظ'
       setSyncError(message)
       throw new Error(message)
     }
 
-    const password = getAdminPasswordForSync()
     if (!password) {
-      const message = 'سجّل دخول الداشبورد لحفظ التغييرات'
+      const message = 'سجّل دخول الداشبورد أولاً'
       setSyncError(message)
       throw new Error(message)
     }
 
-    setContent(next)
+    const snapshot = contentRef.current
+    setSyncStatus('saving')
+    setSyncError('')
 
     try {
-      const saved = await saveRemoteContent(next, password)
-      setContent(saved)
-      setSyncStatus('cloud')
-      setSyncError('')
-      return saved
+      await saveRemoteContent(snapshot, password)
+
+      if (snapshot.password && snapshot.password !== password) {
+        setAdminPasswordForSync(snapshot.password)
+      }
+
+      setIsDirty(false)
+      setSyncStatus('ready')
+      return true
     } catch (error) {
       setSyncStatus('error')
       setSyncError(
         error.message === 'invalid_password'
-          ? 'كلمة المرور غير صحيحة'
+          ? 'كلمة مرور الدخول لا تطابق قاعدة البيانات — سجّل خروج وادخل بالكلمة الحالية'
           : error.message || 'فشل الحفظ على Supabase',
       )
       throw error
     }
   }, [])
 
+  const verifyPassword = useCallback(async (password) => {
+    if (!isSupabaseConfigured) {
+      throw new Error('تعذّر الاتصال بالخادم')
+    }
+    return verifySitePassword(password)
+  }, [])
+
   const updateField = useCallback(
     (section, field, value) => {
-      persist({
-        ...content,
+      patchContent((prev) => ({
+        ...prev,
         [section]: {
-          ...content[section],
+          ...prev[section],
           [field]: value,
         },
-      })
+      }))
     },
-    [content, persist],
+    [patchContent],
   )
 
   const updateNestedField = useCallback(
     (section, nested, field, value) => {
-      persist({
-        ...content,
+      patchContent((prev) => ({
+        ...prev,
         [section]: {
-          ...content[section],
+          ...prev[section],
           [nested]: {
-            ...content[section][nested],
+            ...prev[section][nested],
             [field]: value,
           },
         },
-      })
+      }))
     },
-    [content, persist],
+    [patchContent],
   )
 
   const updateRoot = useCallback(
     (field, value) => {
-      persist({ ...content, [field]: value })
+      patchContent((prev) => ({ ...prev, [field]: value }))
     },
-    [content, persist],
+    [patchContent],
   )
 
   const updateDate = useCallback(
     (field, value) => {
-      persist({
-        ...content,
-        dates: { ...content.dates, [field]: value },
-      })
+      patchContent((prev) => ({
+        ...prev,
+        dates: { ...prev.dates, [field]: value },
+      }))
     },
-    [content, persist],
+    [patchContent],
   )
 
   const updateMemory = useCallback(
     (id, patch) => {
-      persist({
-        ...content,
-        memories: content.memories.map((memory) =>
+      patchContent((prev) => ({
+        ...prev,
+        memories: prev.memories.map((memory) =>
           memory.id === id ? { ...memory, ...patch } : memory,
         ),
-      })
+      }))
     },
-    [content, persist],
+    [patchContent],
   )
 
   const addMemory = useCallback(() => {
-    const id = nextItemId(content.memories)
-    persist({
-      ...content,
-      memories: [
-        ...content.memories,
-        { id, image: '', date: '', text: '' },
-      ],
+    patchContent((prev) => {
+      const id = nextItemId(prev.memories)
+      return {
+        ...prev,
+        memories: [...prev.memories, { id, image: '', date: '', text: '' }],
+      }
     })
-  }, [content, persist])
+  }, [patchContent])
 
   const removeMemory = useCallback(
     (id) => {
-      persist({
-        ...content,
-        memories: content.memories.filter((memory) => memory.id !== id),
-      })
+      patchContent((prev) => ({
+        ...prev,
+        memories: prev.memories.filter((memory) => memory.id !== id),
+      }))
     },
-    [content, persist],
+    [patchContent],
   )
 
   const updateGalleryItem = useCallback(
     (id, patch) => {
-      persist({
-        ...content,
-        galleryItems: (content.galleryItems ?? []).map((item) =>
+      patchContent((prev) => ({
+        ...prev,
+        galleryItems: (prev.galleryItems ?? []).map((item) =>
           item.id === id ? { ...item, ...patch } : item,
         ),
-      })
+      }))
     },
-    [content, persist],
+    [patchContent],
   )
 
   const addGalleryItem = useCallback(() => {
-    const id = nextItemId(content.galleryItems ?? [])
-    persist({
-      ...content,
-      galleryItems: [
-        ...(content.galleryItems ?? []),
-        { id, image: '', date: '', text: '' },
-      ],
+    patchContent((prev) => {
+      const id = nextItemId(prev.galleryItems ?? [])
+      return {
+        ...prev,
+        galleryItems: [
+          ...(prev.galleryItems ?? []),
+          { id, image: '', date: '', text: '' },
+        ],
+      }
     })
-  }, [content, persist])
+  }, [patchContent])
 
   const removeGalleryItem = useCallback(
     (id) => {
-      persist({
-        ...content,
-        galleryItems: (content.galleryItems ?? []).filter((item) => item.id !== id),
-      })
+      patchContent((prev) => ({
+        ...prev,
+        galleryItems: (prev.galleryItems ?? []).filter((item) => item.id !== id),
+      }))
     },
-    [content, persist],
-  )
-
-  const syncToCloud = useCallback(
-    async (password = getAdminPasswordForSync()) => {
-      if (!isSupabaseConfigured || !password) return false
-
-      try {
-        const saved = await pushContentToCloud(content, password)
-        setContent(saved)
-        setSyncStatus('cloud')
-        setSyncError('')
-        return true
-      } catch (error) {
-        setSyncStatus('error')
-        setSyncError(error.message || 'فشل المزامنة مع Supabase')
-        return false
-      }
-    },
-    [content],
+    [patchContent],
   )
 
   const uploadMemoryImage = useCallback(
     async (id, file) => {
-      try {
-        const image = await uploadAsset(file, 'story')
-        await persist({
-          ...content,
-          memories: content.memories.map((memory) =>
-            memory.id === id ? { ...memory, image } : memory,
-          ),
-        })
-      } catch (error) {
-        setSyncError(error.message || 'فشل رفع الصورة')
-        throw error
-      }
+      const image = await uploadAsset(file, 'story')
+      patchContent((prev) => ({
+        ...prev,
+        memories: prev.memories.map((memory) =>
+          memory.id === id ? { ...memory, image } : memory,
+        ),
+      }))
+      return image
     },
-    [content, persist],
+    [patchContent],
   )
 
   const uploadGalleryImage = useCallback(
     async (id, file) => {
-      try {
-        const image = await uploadAsset(file, 'gallery')
-        await persist({
-          ...content,
-          galleryItems: (content.galleryItems ?? []).map((item) =>
-            item.id === id ? { ...item, image } : item,
-          ),
-        })
-      } catch (error) {
-        setSyncError(error.message || 'فشل رفع الصورة')
-        throw error
-      }
+      const image = await uploadAsset(file, 'gallery')
+      patchContent((prev) => ({
+        ...prev,
+        galleryItems: (prev.galleryItems ?? []).map((item) =>
+          item.id === id ? { ...item, image } : item,
+        ),
+      }))
+      return image
     },
-    [content, persist],
+    [patchContent],
   )
 
   const uploadMusic = useCallback(
     async (file) => {
       if (!isAudioFile(file)) {
-        const error = new Error('الملف لازم يكون صوت (mp3, m4a, wav, ogg, flac...)')
-        setSyncError(error.message)
-        throw error
-      }
-
-      const password = getAdminPasswordForSync()
-      if (!password) {
-        const error = new Error('سجّل دخول الداشبورد لحفظ التغييرات')
-        setSyncError(error.message)
-        throw error
+        throw new Error('الملف لازم يكون صوت (mp3, m4a, wav, ogg, flac...)')
       }
 
       setIsMusicUploading(true)
@@ -311,14 +304,15 @@ export function ContentProvider({ children }) {
 
       try {
         const url = await uploadAsset(file, 'music')
-        await persist({
-          ...content,
+        patchContent((prev) => ({
+          ...prev,
           music: {
-            ...content.music,
+            ...prev.music,
             src: url,
             fileName: file.name,
           },
-        })
+        }))
+        return url
       } catch (error) {
         const message =
           error.message?.includes('mime') || error.message?.includes('not allowed')
@@ -330,47 +324,28 @@ export function ContentProvider({ children }) {
         setIsMusicUploading(false)
       }
     },
-    [content, persist],
+    [patchContent],
   )
 
-  const removeMusic = useCallback(async () => {
-    setIsMusicUploading(true)
-    setSyncError('')
+  const removeMusic = useCallback(() => {
+    patchContent((prev) => ({
+      ...prev,
+      music: {
+        ...prev.music,
+        src: '',
+        fileName: '',
+      },
+    }))
+  }, [patchContent])
 
-    try {
-      await persist({
-        ...content,
-        music: {
-          ...content.music,
-          src: '',
-          fileName: '',
-        },
-      })
-    } catch (error) {
-      setSyncError(error.message || 'فشل حذف الأغنية')
-      throw error
-    } finally {
-      setIsMusicUploading(false)
-    }
-  }, [content, persist])
-
-  const resetToDefaults = useCallback(async () => {
+  const resetToDefaults = useCallback(() => {
     const next = structuredClone(defaultContent)
-    const password = getAdminPasswordForSync()
-    if (!password) {
-      setSyncError('سجّل دخول الداشبورد أولاً')
-      return
-    }
-
-    try {
-      const saved = await saveRemoteContent(next, password)
-      setContent(saved)
-      setSyncStatus('cloud')
-      setSyncError('')
-    } catch (error) {
-      setSyncStatus('error')
-      setSyncError(error.message || 'فشل استعادة الإعدادات الافتراضية')
-    }
+    contentRef.current = next
+    setContent(next)
+    applySiteTheme(next.appearance)
+    setIsDirty(true)
+    setSyncStatus('ready')
+    setSyncError('')
   }, [])
 
   const musicSrc = resolveMusicSrc(content)
@@ -380,6 +355,7 @@ export function ContentProvider({ children }) {
       content,
       musicSrc,
       isLoading,
+      isDirty,
       syncStatus,
       syncError,
       isSupabaseConfigured,
@@ -399,12 +375,15 @@ export function ContentProvider({ children }) {
       uploadMusic,
       removeMusic,
       resetToDefaults,
-      syncToCloud,
+      saveChanges,
+      loadFromDatabase,
+      verifyPassword,
     }),
     [
       content,
       musicSrc,
       isLoading,
+      isDirty,
       syncStatus,
       syncError,
       isMusicUploading,
@@ -422,9 +401,10 @@ export function ContentProvider({ children }) {
       uploadGalleryImage,
       uploadMusic,
       removeMusic,
-      isMusicUploading,
       resetToDefaults,
-      syncToCloud,
+      saveChanges,
+      loadFromDatabase,
+      verifyPassword,
     ],
   )
 
