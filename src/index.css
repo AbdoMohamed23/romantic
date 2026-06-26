@@ -1,8 +1,12 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Tajawal", "Cairo", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Cairo", "Tajawal", ui-sans-serif, sans-serif;
+  --font-sans: "Tajawal", "Cairo", ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji",
+    emoji;
+  --font-display: "Cairo", "Tajawal", ui-sans-serif, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji",
+    emoji;
 
   --color-blush-50: var(--theme-50);
   --color-blush-100: var(--theme-100);
@@ -71,6 +75,26 @@ body {
   backdrop-filter: blur(16px);
   border: 1px solid rgb(255 255 255 / 0.8);
   box-shadow: 0 8px 32px -8px rgb(var(--theme-rgb) / 0.25);
+}
+
+.enter-card {
+  position: relative;
+  overflow: hidden;
+  background: rgb(255 255 255 / 0.38);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgb(255 255 255 / 0.55);
+}
+
+.enter-card__header {
+  position: relative;
+  z-index: 1;
+  border-bottom: 1px solid rgb(var(--theme-rgb) / 0.12);
+  background: transparent;
+}
+
+.enter-card__form {
+  position: relative;
+  z-index: 1;
 }
 
 .polaroid-shadow {

@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { config } from '../data/config'
 import { useAuth } from '../hooks/useAuth'
 import { useMusic } from '../context/MusicContext'
 import Enter from '../pages/Enter'
@@ -7,9 +8,11 @@ import Gallery from '../pages/Gallery'
 import Story from '../pages/Story'
 import Welcome from '../pages/Welcome'
 import FadeSwap from './FadeSwap'
+import LoginHeartBurst from './LoginHeartBurst'
 import RomanticShell from './RomanticShell'
 
-const STEPS = ['welcome', 'story', 'gallery', 'final']
+const STEPS = ['enter', 'welcome', 'story', 'gallery', 'final']
+const { skipIntroKey } = config.auth
 
 const PREVIOUS_STEP = {
   story: 'welcome',
@@ -17,13 +20,20 @@ const PREVIOUS_STEP = {
   final: 'gallery',
 }
 
+function shouldSkipLoginIntro() {
+  return sessionStorage.getItem(skipIntroKey) === 'true'
+}
+
 export default function Home() {
   const { isAuthenticated, login } = useAuth()
   const { requestMusicStart } = useMusic()
-  const [step, setStep] = useState('welcome')
+  const [step, setStep] = useState(() => (isAuthenticated ? 'welcome' : 'enter'))
+  const [heartOverlay, setHeartOverlay] = useState(false)
+  const [welcomeFadeDone, setWelcomeFadeDone] = useState(false)
+  const [calmWelcome, setCalmWelcome] = useState(isAuthenticated)
 
-  const screenKey = isAuthenticated ? step : 'login'
-  const canGoBack = isAuthenticated && Boolean(PREVIOUS_STEP[step])
+  const canGoBack =
+    isAuthenticated && Boolean(PREVIOUS_STEP[step]) && !heartOverlay
 
   const goTo = useCallback((nextStep) => {
     if (STEPS.includes(nextStep) && nextStep !== step) {
@@ -36,18 +46,54 @@ export default function Home() {
     if (previous) goTo(previous)
   }, [goTo, step])
 
-  const handleLogin = useCallback(() => {
+  const completeLogin = useCallback(() => {
     login()
     requestMusicStart()
-    setStep('welcome')
   }, [login, requestMusicStart])
 
-  const renderScreen = (key) => {
+  const handleLogin = useCallback(() => {
+    if (shouldSkipLoginIntro()) {
+      sessionStorage.removeItem(skipIntroKey)
+      setCalmWelcome(true)
+      completeLogin()
+      setStep('welcome')
+      return
+    }
+
+    setWelcomeFadeDone(false)
+    setHeartOverlay(true)
+  }, [completeLogin])
+
+  const handleHeartsCovered = useCallback(() => {
+    setCalmWelcome(true)
+    completeLogin()
+    setStep('welcome')
+  }, [completeLogin])
+
+  useEffect(() => {
+    if (heartOverlay && step === 'welcome') {
+      setWelcomeFadeDone(true)
+    }
+  }, [heartOverlay, step])
+
+  const handleHeartsComplete = useCallback(() => {
+    setHeartOverlay(false)
+    setWelcomeFadeDone(false)
+  }, [])
+
+  const handleWelcomeNext = useCallback(() => {
+    setCalmWelcome(false)
+    goTo('story')
+  }, [goTo])
+
+  const renderStep = (key) => {
     switch (key) {
-      case 'login':
+      case 'enter':
         return <Enter onLogin={handleLogin} />
       case 'welcome':
-        return <Welcome onNext={() => goTo('story')} />
+        return (
+          <Welcome soft={calmWelcome} onNext={handleWelcomeNext} />
+        )
       case 'story':
         return <Story onNext={() => goTo('gallery')} />
       case 'gallery':
@@ -59,15 +105,25 @@ export default function Home() {
     }
   }
 
+  const showMusic = isAuthenticated && step !== 'enter'
+
   return (
     <RomanticShell
-      showMusic={isAuthenticated}
+      showMusic={showMusic}
       showBack={canGoBack}
       onBack={handleBack}
     >
-      <FadeSwap activeKey={screenKey} className="flow-screen">
-        {renderScreen}
+      <FadeSwap activeKey={step} className="flow-screen">
+        {renderStep}
       </FadeSwap>
+
+      {heartOverlay ? (
+        <LoginHeartBurst
+          onCovered={handleHeartsCovered}
+          onComplete={handleHeartsComplete}
+          canExit={welcomeFadeDone}
+        />
+      ) : null}
     </RomanticShell>
   )
 }

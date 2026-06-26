@@ -53,8 +53,8 @@ export default function Enter({ onLogin }) {
     <FlowPage variant="center">
       <RevealGroup className="w-full">
         <RevealItem>
-          <div className="glass-card theme-shadow-enter overflow-hidden rounded-4xl">
-            <div className="border-b border-rose-100/80 bg-gradient-to-r from-rose-50/90 via-pink-50/90 to-rose-50/90 px-8 py-8 text-center">
+          <div className="enter-card theme-shadow-enter rounded-4xl">
+            <div className="enter-card__header px-8 py-8 text-center">
               <div className="heart-pulse mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-sm">
                 <Heart className="text-rose-400" size={28} fill="currentColor" />
               </div>
@@ -72,7 +72,7 @@ export default function Enter({ onLogin }) {
 
             <form
               onSubmit={handleSubmit}
-              className={`space-y-5 px-8 py-8 ${shake ? 'enter-shake' : ''}`}
+              className={`enter-card__form space-y-5 px-8 py-8 ${shake ? 'enter-shake' : ''}`}
             >
               <label className="block text-center">
                 <span className="mb-2 flex items-center justify-center gap-2 text-sm font-medium text-rose-600">

@@ -14,7 +14,6 @@ import {
   Trash2,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import HeartBackground from '../components/HeartBackground'
 import MemoryEditor from '../components/dashboard/MemoryEditor'
 import {
   DateInput,
@@ -73,16 +72,15 @@ function AdminLoginForm({ onLogin }) {
 
   if (isLoading) {
     return (
-      <div className="romantic-bg relative flex min-h-dvh items-center justify-center">
+      <div className="flex min-h-dvh items-center justify-center">
         <p className="text-sm text-rose-500">جاري تحميل المحتوى...</p>
       </div>
     )
   }
 
   return (
-    <div className="romantic-bg relative min-h-dvh overflow-x-hidden">
-      <HeartBackground density="normal" />
-      <main className="relative z-10 flex min-h-dvh items-center justify-center px-5 py-10">
+    <div className="min-h-dvh overflow-x-hidden">
+      <main className="flex min-h-dvh items-center justify-center px-5 py-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -232,7 +230,7 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="romantic-bg relative flex min-h-dvh items-center justify-center">
+      <div className="flex min-h-dvh items-center justify-center">
         <p className="text-sm text-rose-500">جاري تحميل المحتوى من قاعدة البيانات...</p>
       </div>
     )
@@ -767,10 +765,8 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="romantic-bg relative min-h-dvh overflow-x-hidden">
-      <HeartBackground density="normal" />
-
-      <div className="relative z-10 mx-auto max-w-4xl px-4 py-6 sm:px-6">
+    <div className="min-h-dvh overflow-x-hidden">
+      <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
         <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-medium text-rose-400">{content.siteName}</p>

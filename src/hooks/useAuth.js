@@ -86,4 +86,5 @@ export function checkAuth() {
 
 export function grantVisitorPreviewAccess() {
   sessionStorage.setItem(VISITOR_KEY, 'true')
+  sessionStorage.setItem(config.auth.skipIntroKey, 'true')
 }

@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import BackButton from './BackButton'
-import HeartBackground from './HeartBackground'
 import MusicPlayer from './MusicPlayer'
 import { useMusic } from '../context/MusicContext'
 
@@ -19,9 +18,7 @@ export default function RomanticShell({
   }, [showMusic, tryWelcomeMusicStart])
 
   return (
-    <div className="romantic-bg relative min-h-dvh overflow-x-hidden font-sans">
-      <HeartBackground />
-
+    <div className="relative min-h-dvh overflow-x-hidden">
       {showBack ? (
         <div
           className="pointer-events-none fixed inset-x-0 z-40 flex justify-center px-5 sm:px-6"

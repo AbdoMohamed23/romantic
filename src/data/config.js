@@ -6,6 +6,7 @@ export const config = {
   auth: {
     storageKey: 'romantic-site-authenticated',
     adminStorageKey: 'romantic-site-admin',
+    skipIntroKey: 'romantic-site-skip-intro',
   },
   animations: {
     screen: {
@@ -24,6 +25,14 @@ export const config = {
     welcome: {
       holdDuration: 1.4,
       openDuration: 1.2,
+    },
+    loginReveal: {
+      burstDuration: 2.8,
+      coverDuration: 0.5,
+      welcomeFadeDuration: 2,
+      exitDuration: 1.8,
+      heartCount: 220,
+      mobileHeartCount: 155,
     },
     text: {
       wordDelay: 140,
