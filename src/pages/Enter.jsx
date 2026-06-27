@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Heart, KeyRound, Sparkles } from 'lucide-react'
+import { KeyRound } from 'lucide-react'
 import FlowPage from '../components/FlowPage'
 import { RevealGroup, RevealItem } from '../components/Reveal'
 import { useContent } from '../context/ContentContext'
@@ -55,10 +55,6 @@ export default function Enter({ onLogin }) {
         <RevealItem>
           <div className="enter-card theme-shadow-enter rounded-4xl">
             <div className="enter-card__header px-8 py-8 text-center">
-              <div className="heart-pulse mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-sm">
-                <Heart className="text-rose-400" size={28} fill="currentColor" />
-              </div>
-
               <p className="text-xs font-medium text-rose-400">
                 {content.login.eyebrow}
               </p>
@@ -105,9 +101,8 @@ export default function Enter({ onLogin }) {
               <button
                 type="submit"
                 disabled={submitting}
-                className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-rose-400 to-pink-400 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-rose-200/80 transition hover:from-rose-500 hover:to-pink-500 active:scale-[0.98] disabled:opacity-70"
+                className="flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-rose-400 to-pink-400 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-rose-200/80 transition hover:from-rose-500 hover:to-pink-500 active:scale-[0.98] disabled:opacity-70"
               >
-                <Sparkles size={16} className="transition group-hover:rotate-12" />
                 {submitting ? 'جاري التحقق...' : content.login.button}
               </button>
             </form>

@@ -1,15 +1,13 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
 import { useContent } from '../context/ContentContext'
 import {
   createFloatingHearts,
   getHeartCount,
   heartColor,
-  heartGlowShadow,
 } from '../utils/heartVisuals'
 
 function HeartBackground({ className = '' }) {
-  useContent()
+  const { content } = useContent()
   const heartsCache = useRef({ count: 0, hearts: [] })
   const [count, setCount] = useState(() => getHeartCount())
 
@@ -50,35 +48,26 @@ function HeartBackground({ className = '' }) {
 
   return (
     <div
-      className={`pointer-events-none fixed inset-0 overflow-hidden ${className}`}
+      className={`heart-background pointer-events-none fixed inset-0 overflow-hidden ${className}`}
+      data-theme={content.appearance?.primaryColor ?? 'default'}
       aria-hidden="true"
     >
       {hearts.map((heart) => (
-        <motion.span
+        <span
           key={heart.id}
-          className="absolute select-none will-change-transform"
+          className="heart-background__item absolute select-none"
           style={{
             left: heart.left,
-            bottom: '-4rem',
             fontSize: `${heart.size}px`,
             color: heartColor(heart.opacity),
-            textShadow: heartGlowShadow(),
-          }}
-          initial={{ y: 0, opacity: 0 }}
-          animate={{
-            y: '-125vh',
-            opacity: [0, heart.opacity, heart.opacity * 0.9, heart.opacity * 0.45, 0],
-            x: [0, heart.drift * 0.35, heart.drift],
-          }}
-          transition={{
-            duration: heart.duration,
-            repeat: Infinity,
-            delay: heart.delay,
-            ease: 'linear',
+            '--heart-opacity': heart.opacity,
+            '--heart-duration': `${heart.duration}s`,
+            '--heart-delay': `${heart.delay}s`,
+            '--heart-drift': `${heart.drift}px`,
           }}
         >
           ♥
-        </motion.span>
+        </span>
       ))}
     </div>
   )

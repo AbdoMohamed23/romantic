@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { config } from '../data/config'
 import { useAuth } from '../hooks/useAuth'
 import { useMusic } from '../context/MusicContext'
@@ -26,7 +26,7 @@ function shouldSkipLoginIntro() {
 
 export default function Home() {
   const { isAuthenticated, login } = useAuth()
-  const { requestMusicStart } = useMusic()
+  const { requestMusicStart, playMusic } = useMusic()
   const [step, setStep] = useState(() => (isAuthenticated ? 'welcome' : 'enter'))
   const [heartOverlay, setHeartOverlay] = useState(false)
   const [welcomeFadeDone, setWelcomeFadeDone] = useState(false)
@@ -48,33 +48,31 @@ export default function Home() {
 
   const completeLogin = useCallback(() => {
     login()
-    requestMusicStart()
-  }, [login, requestMusicStart])
+  }, [login])
 
   const handleLogin = useCallback(() => {
     if (shouldSkipLoginIntro()) {
       sessionStorage.removeItem(skipIntroKey)
       setCalmWelcome(true)
       completeLogin()
+      requestMusicStart()
+      void playMusic()
       setStep('welcome')
       return
     }
 
     setWelcomeFadeDone(false)
+    requestMusicStart()
+    void playMusic()
     setHeartOverlay(true)
-  }, [completeLogin])
+  }, [completeLogin, requestMusicStart, playMusic])
 
   const handleHeartsCovered = useCallback(() => {
     setCalmWelcome(true)
     completeLogin()
     setStep('welcome')
+    setWelcomeFadeDone(true)
   }, [completeLogin])
-
-  useEffect(() => {
-    if (heartOverlay && step === 'welcome') {
-      setWelcomeFadeDone(true)
-    }
-  }, [heartOverlay, step])
 
   const handleHeartsComplete = useCallback(() => {
     setHeartOverlay(false)
@@ -105,7 +103,7 @@ export default function Home() {
     }
   }
 
-  const showMusic = isAuthenticated && step !== 'enter'
+  const showMusic = heartOverlay || (isAuthenticated && step !== 'enter')
 
   return (
     <RomanticShell

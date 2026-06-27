@@ -1,26 +1,26 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { motion } from 'framer-motion'
 import { config } from '../data/config'
+import { getLoginRevealHeartCount } from '../utils/heartVisuals'
 import {
-  createDenseCoverHearts,
-  getLoginRevealHeartCount,
-  heartColor,
-  heartGlowShadow,
-} from '../utils/heartVisuals'
+  createLoginHeartParticles,
+  drawLoginHeartFrame,
+  isLoginHeartExitComplete,
+} from '../utils/loginHeartCanvas'
 
 const { loginReveal } = config.animations
 
 export default function LoginHeartBurst({ onCovered, onComplete, canExit }) {
+  const canvasRef = useRef(null)
+  const particlesRef = useRef([])
+  const startTimeRef = useRef(0)
+  const exitStartRef = useRef(null)
+  const rafRef = useRef(0)
   const [phase, setPhase] = useState('burst')
   const onCoveredRef = useRef(onCovered)
   const onCompleteRef = useRef(onComplete)
   const coveredRef = useRef(false)
   const finishedRef = useRef(false)
-  const coverHearts = useMemo(
-    () => createDenseCoverHearts(getLoginRevealHeartCount()),
-    [],
-  )
 
   onCoveredRef.current = onCovered
   onCompleteRef.current = onComplete
@@ -38,27 +38,85 @@ export default function LoginHeartBurst({ onCovered, onComplete, canExit }) {
   }
 
   useEffect(() => {
+    document.documentElement.classList.add('login-reveal-active')
+
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (reducedMotion) {
       markCovered()
       finish()
-      return
+      return () => {
+        document.documentElement.classList.remove('login-reveal-active')
+      }
     }
 
+    const canvas = canvasRef.current
+    if (!canvas) return undefined
+
+    const ctx = canvas.getContext('2d', { alpha: true })
+    if (!ctx) return undefined
+
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    let width = window.innerWidth
+    let height = window.innerHeight
+
+    const resize = () => {
+      width = window.innerWidth
+      height = window.innerHeight
+      canvas.width = Math.floor(width * dpr)
+      canvas.height = Math.floor(height * dpr)
+      canvas.style.width = `${width}px`
+      canvas.style.height = `${height}px`
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    }
+
+    resize()
+    particlesRef.current = createLoginHeartParticles(
+      getLoginRevealHeartCount(),
+      width,
+      height,
+    )
+    startTimeRef.current = performance.now()
+
+    const loop = (now) => {
+      drawLoginHeartFrame(
+        ctx,
+        particlesRef.current,
+        now,
+        startTimeRef.current,
+        exitStartRef.current,
+        width,
+        height,
+      )
+
+      if (
+        exitStartRef.current !== null &&
+        isLoginHeartExitComplete(particlesRef.current, now, exitStartRef.current)
+      ) {
+        finish()
+        return
+      }
+
+      rafRef.current = requestAnimationFrame(loop)
+    }
+
+    rafRef.current = requestAnimationFrame(loop)
+
     const coverTimer = window.setTimeout(() => {
-      setPhase('covered')
       markCovered()
       setPhase('hold')
     }, loginReveal.burstDuration * 1000)
 
     const failsafeTimer = window.setTimeout(
       finish,
-      (loginReveal.burstDuration + loginReveal.welcomeFadeDuration + loginReveal.exitDuration) *
-        1000 +
-        2000,
+      (loginReveal.burstDuration + loginReveal.exitDuration) * 1000 + 4000,
     )
 
+    window.addEventListener('resize', resize)
+
     return () => {
+      document.documentElement.classList.remove('login-reveal-active')
+      window.removeEventListener('resize', resize)
+      window.cancelAnimationFrame(rafRef.current)
       window.clearTimeout(coverTimer)
       window.clearTimeout(failsafeTimer)
     }
@@ -66,57 +124,19 @@ export default function LoginHeartBurst({ onCovered, onComplete, canExit }) {
 
   useEffect(() => {
     if (phase === 'hold' && canExit) {
+      exitStartRef.current = performance.now()
       setPhase('exit')
     }
   }, [phase, canExit])
 
   return createPortal(
-    <motion.div
-      className="pointer-events-none fixed inset-0 z-[9999] overflow-hidden"
-      style={{ width: '100vw', height: '100dvh' }}
+    <div
+      className={`login-heart-burst${phase === 'exit' ? ' login-heart-burst--exit' : ''}`}
+      style={{ '--login-exit-duration': `${loginReveal.exitDuration}s` }}
       aria-hidden="true"
-      initial={{ opacity: 1 }}
-      animate={
-        phase === 'exit'
-          ? { opacity: 0 }
-          : { opacity: 1 }
-      }
-      transition={{
-        duration: loginReveal.exitDuration,
-        ease: [0.22, 1, 0.36, 1],
-      }}
-      onAnimationComplete={() => {
-        if (phase === 'exit') finish()
-      }}
     >
-      {coverHearts.map((heart) => (
-        <motion.span
-          key={heart.id}
-          className="absolute select-none will-change-transform"
-          style={{
-            left: `${heart.left}%`,
-            top: `${heart.top}%`,
-            fontSize: `${heart.size}px`,
-            color: heartColor(heart.opacity),
-            textShadow: heartGlowShadow(),
-            zIndex: 10 + heart.layer,
-            rotate: `${heart.rotation}deg`,
-          }}
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{
-            scale: [0, 1.12, 1],
-            opacity: [0, heart.opacity, Math.min(1, heart.opacity + 0.1)],
-          }}
-          transition={{
-            duration: heart.duration,
-            delay: heart.delay,
-            ease: [0.22, 1, 0.36, 1],
-          }}
-        >
-          ♥
-        </motion.span>
-      ))}
-    </motion.div>,
+      <canvas ref={canvasRef} className="login-heart-burst__canvas" />
+    </div>,
     document.body,
   )
 }

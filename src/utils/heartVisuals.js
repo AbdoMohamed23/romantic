@@ -47,17 +47,6 @@ export function heartGlowShadow() {
   return `0 0 12px rgba(${readThemeRgb()}, 0.35)`
 }
 
-export function createStaticHearts(count) {
-  return Array.from({ length: count }, (_, id) => ({
-    id,
-    left: 1 + Math.random() * 98,
-    top: Math.random() * 100,
-    size: pickHeartSize(),
-    opacity: pickHeartOpacity(),
-    delay: Math.random() * 0.7,
-  }))
-}
-
 export function createFloatingHearts(count) {
   return Array.from({ length: count }, (_, id) => ({
     id,
@@ -67,21 +56,6 @@ export function createFloatingHearts(count) {
     delay: Math.random() * 10,
     duration: 9 + Math.random() * 10,
     drift: (Math.random() - 0.5) * 70,
-  }))
-}
-
-/** قلوب عشوائية تملأ الشاشة فوق بعض */
-export function createDenseCoverHearts(count) {
-  return Array.from({ length: count }, (_, id) => ({
-    id,
-    left: -8 + Math.random() * 116,
-    top: -8 + Math.random() * 116,
-    size: 16 + Math.random() * 48,
-    opacity: 0.55 + Math.random() * 0.45,
-    delay: Math.random() * 2.2,
-    duration: 0.65 + Math.random() * 1.35,
-    rotation: (Math.random() - 0.5) * 50,
-    layer: Math.floor(Math.random() * 6),
   }))
 }
 

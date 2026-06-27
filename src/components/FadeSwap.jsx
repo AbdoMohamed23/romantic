@@ -1,9 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { config } from '../data/config'
 import { getScreenMotion } from '../utils/motion'
-
-export const FADE_OUT_MS = config.animations.screen.fadeOut
-export const FADE_IN_MS = config.animations.screen.fadeIn
 
 const INSTANT_ENTER_KEYS = new Set(['welcome'])
 
