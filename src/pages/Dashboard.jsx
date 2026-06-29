@@ -361,44 +361,45 @@ export default function Dashboard() {
         )
 
       case 'music':
-        const tracks = content.music?.tracks || []
+        const rawTracks = content.music?.tracks || []
+        const tracksList = Array.from({ length: 5 }, (_, idx) => {
+          if (rawTracks[idx]) return rawTracks[idx]
+          if (idx === 0 && content.music?.src) {
+            return {
+              id: 'default',
+              title: content.music.title || 'أغنيتنا',
+              fileName: content.music.fileName || 'romantic.mp3',
+              src: content.music.src,
+            }
+          }
+          return {
+            id: `slot-${idx}`,
+            title: `أغنية ${idx + 1}`,
+            fileName: '',
+            src: '',
+          }
+        })
+
         return (
           <Section
             title="الموسيقى"
             description="يمكنك رفع وتسمية حتى 5 ملفات صوتية تعمل كقائمة تشغيل متتالية"
           >
-            <Field label="مستوى الصوت (0 - 1)">
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                value={content.music.volume}
-                onChange={(e) => {
-                  updateField('music', 'volume', Number(e.target.value))
-                }}
-                className="w-full accent-rose-400"
-              />
-              <span className="text-xs text-rose-400">
-                {Math.round(content.music.volume * 100)}%
-              </span>
-            </Field>
-
-            <div className="space-y-6 pt-4 border-t border-rose-100">
-              <h3 className="font-display text-sm font-semibold text-rose-900">الملفات الصوتية المرفوعة ({tracks.length} / 5)</h3>
-              
-              {tracks.map((track, idx) => (
-                <div key={track.id} className="rounded-2xl border border-rose-100 bg-rose-50/20 p-4 space-y-3">
+            <div className="space-y-6">
+              {tracksList.map((track, idx) => (
+                <div key={track.id || idx} className="rounded-2xl border border-rose-100 bg-rose-50/20 p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-rose-400">الأغنية رقم {idx + 1}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeMusic(idx)}
-                      className="text-xs text-rose-500 hover:text-rose-700 flex items-center gap-1 font-semibold"
-                    >
-                      <Trash2 size={12} />
-                      حذف
-                    </button>
+                    {track.src && (
+                      <button
+                        type="button"
+                        onClick={() => removeMusic(idx)}
+                        className="text-xs text-rose-500 hover:text-rose-700 flex items-center gap-1 font-semibold"
+                      >
+                        <Trash2 size={12} />
+                        حذف الملف
+                      </button>
+                    )}
                   </div>
                   
                   <Field label="عنوان الأغنية">
@@ -410,57 +411,53 @@ export default function Dashboard() {
                     />
                   </Field>
                   
-                  <p className="text-xs text-rose-400 truncate">الملف: {track.fileName || 'ملف خارجي'}</p>
-                  
-                  <audio controls src={track.src} className="w-full h-8" key={track.src} />
+                  {track.src ? (
+                    <div className="space-y-2">
+                      <p className="text-xs text-rose-400 truncate">الملف: {track.fileName}</p>
+                      <audio controls src={track.src} className="w-full h-8" key={track.src} />
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {syncError && activeTab === 'music' ? (
+                        <p className="mb-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-600">
+                          {syncError}
+                        </p>
+                      ) : null}
+                      <label
+                        className={`relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-4 text-xs transition ${isMusicUploading
+                            ? 'border-rose-300 bg-rose-50 text-rose-500'
+                            : 'border-rose-200 bg-rose-50/50 text-rose-500 hover:border-rose-300'
+                          } ${isMusicUploading ? 'pointer-events-none opacity-80' : ''}`}
+                      >
+                        {isMusicUploading ? (
+                          <>
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-rose-200 border-t-rose-500" />
+                            <span className="font-medium">جاري الرفع...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Music2 size={14} />
+                            <span>اضغط لرفع ملف صوتي لهذه الأغنية</span>
+                          </>
+                        )}
+                        <input
+                          type="file"
+                          accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac,.webm,.opus,.mpeg,.mpga"
+                          className="hidden"
+                          disabled={isMusicUploading}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              uploadMusic(file, idx).catch(() => { })
+                            }
+                            e.target.value = ''
+                          }}
+                        />
+                      </label>
+                    </div>
+                  )}
                 </div>
               ))}
-
-              {tracks.length < 5 && (
-                <div className="space-y-3">
-                  <span className="text-xs font-semibold text-rose-400">إضافة أغنية جديدة</span>
-                  {syncError && activeTab === 'music' ? (
-                    <p className="mb-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-600">
-                      {syncError}
-                    </p>
-                  ) : null}
-                  <label
-                    className={`relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-6 text-sm transition ${isMusicUploading
-                        ? 'border-rose-300 bg-rose-50 text-rose-500'
-                        : 'border-rose-200 bg-rose-50/50 text-rose-500 hover:border-rose-300'
-                      } ${isMusicUploading ? 'pointer-events-none opacity-80' : ''}`}
-                  >
-                    {isMusicUploading ? (
-                      <>
-                        <span className="h-6 w-6 animate-spin rounded-full border-2 border-rose-200 border-t-rose-500" />
-                        <span className="font-medium">جاري رفع الملف...</span>
-                        <span className="text-xs text-rose-400">لا تغلق الصفحة</span>
-                      </>
-                    ) : (
-                      <>
-                        <Music2 size={18} />
-                        <span>اضغط هنا لرفع ملف صوتي جديد (الحد الأقصى 5 أغاني)</span>
-                        <span className="text-xs text-rose-400">
-                          mp3 · m4a · wav · ogg · flac · aac · webm
-                        </span>
-                      </>
-                    )}
-                    <input
-                      type="file"
-                      accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac,.webm,.opus,.mpeg,.mpga"
-                      className="hidden"
-                      disabled={isMusicUploading}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0]
-                        if (file) {
-                          uploadMusic(file, tracks.length).catch(() => { })
-                        }
-                        e.target.value = ''
-                      }}
-                    />
-                  </label>
-                </div>
-              )}
             </div>
           </Section>
         )

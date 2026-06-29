@@ -24,7 +24,7 @@ export function MusicProvider({ children }) {
 
   const tracks = useMemo(() => {
     if (content?.music?.tracks && content.music.tracks.length > 0) {
-      return content.music.tracks
+      return content.music.tracks.filter((t) => t.src)
     }
     return [
       {

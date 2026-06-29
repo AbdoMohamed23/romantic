@@ -413,6 +413,31 @@ export function ContentProvider({ children }) {
     [patchContent],
   )
 
+  const getInitialTracks = useCallback((musicObj) => {
+    const tracks = musicObj?.tracks || []
+    const result = []
+    for (let i = 0; i < 5; i++) {
+      if (tracks[i]) {
+        result.push(tracks[i])
+      } else if (i === 0 && musicObj?.src) {
+        result.push({
+          id: 'default',
+          title: musicObj.title || 'أغنيتنا',
+          fileName: musicObj.fileName || 'romantic.mp3',
+          src: musicObj.src,
+        })
+      } else {
+        result.push({
+          id: `track-slot-${i}`,
+          title: `أغنية ${i + 1}`,
+          fileName: '',
+          src: '',
+        })
+      }
+    }
+    return result
+  }, [])
+
   const uploadMusic = useCallback(
     async (file, index = 0) => {
       if (!isAudioFile(file)) {
@@ -425,18 +450,18 @@ export function ContentProvider({ children }) {
       try {
         const url = await uploadAsset(file, 'music')
         patchContent((prev) => {
-          const currentTracks = [...(prev.music?.tracks || [])]
-          const newTrack = {
-            id: currentTracks[index]?.id || 'track-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+          const currentTracks = getInitialTracks(prev.music)
+          currentTracks[index] = {
+            ...currentTracks[index],
             title: currentTracks[index]?.title || file.name.split('.').slice(0, -1).join('.') || `أغنية ${index + 1}`,
             fileName: file.name,
             src: url,
           }
-          currentTracks[index] = newTrack
 
-          const mainSrc = index === 0 ? url : (prev.music?.src || url)
-          const mainFileName = index === 0 ? file.name : (prev.music?.fileName || file.name)
-          const mainTitle = index === 0 ? newTrack.title : (prev.music?.title || newTrack.title)
+          const firstActiveTrack = currentTracks.find((t) => t.src)
+          const mainSrc = firstActiveTrack ? firstActiveTrack.src : ''
+          const mainFileName = firstActiveTrack ? firstActiveTrack.fileName : ''
+          const mainTitle = firstActiveTrack ? firstActiveTrack.title : ''
 
           return {
             ...prev,
@@ -461,52 +486,58 @@ export function ContentProvider({ children }) {
         setIsMusicUploading(false)
       }
     },
-    [patchContent],
+    [patchContent, getInitialTracks],
   )
 
-  const removeMusic = useCallback((index = 0) => {
-    patchContent((prev) => {
-      const currentTracks = [...(prev.music?.tracks || [])]
-      if (currentTracks[index]) {
-        currentTracks.splice(index, 1)
-      }
-
-      const firstTrack = currentTracks[0]
-      return {
-        ...prev,
-        music: {
-          ...prev.music,
-          src: firstTrack ? firstTrack.src : '',
-          fileName: firstTrack ? firstTrack.fileName : '',
-          title: firstTrack ? firstTrack.title : '',
-          tracks: currentTracks,
-        },
-      }
-    })
-  }, [patchContent])
-
-  const updateMusicTrackTitle = useCallback(
-    (index, title) => {
+  const removeMusic = useCallback(
+    (index = 0) => {
       patchContent((prev) => {
-        const currentTracks = [...(prev.music?.tracks || [])]
+        const currentTracks = getInitialTracks(prev.music)
         if (currentTracks[index]) {
           currentTracks[index] = {
             ...currentTracks[index],
-            title,
+            fileName: '',
+            src: '',
           }
         }
-        const mainTitle = index === 0 ? title : (prev.music?.title || title)
+
+        const firstActiveTrack = currentTracks.find((t) => t.src)
         return {
           ...prev,
           music: {
             ...prev.music,
-            title: mainTitle,
+            src: firstActiveTrack ? firstActiveTrack.src : '',
+            fileName: firstActiveTrack ? firstActiveTrack.fileName : '',
+            title: firstActiveTrack ? firstActiveTrack.title : '',
             tracks: currentTracks,
           },
         }
       })
     },
-    [patchContent],
+    [patchContent, getInitialTracks],
+  )
+
+  const updateMusicTrackTitle = useCallback(
+    (index, title) => {
+      patchContent((prev) => {
+        const currentTracks = getInitialTracks(prev.music)
+        currentTracks[index] = {
+          ...currentTracks[index],
+          title,
+        }
+
+        const firstActiveTrack = currentTracks.find((t) => t.src)
+        return {
+          ...prev,
+          music: {
+            ...prev.music,
+            title: firstActiveTrack ? firstActiveTrack.title : (index === 0 ? title : (prev.music?.title || title)),
+            tracks: currentTracks,
+          },
+        }
+      })
+    },
+    [patchContent, getInitialTracks],
   )
 
   const resetToDefaults = useCallback(() => {
