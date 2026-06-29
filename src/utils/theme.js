@@ -1,7 +1,9 @@
 const DEFAULT_PRIMARY = '#fb7185'
+const DEFAULT_BACKGROUND_HEART = '#be123c'
 
 const DEFAULT_APPEARANCE = {
   primaryColor: DEFAULT_PRIMARY,
+  backgroundHeartColor: DEFAULT_BACKGROUND_HEART,
   heartOpacity: 0.65,
 }
 
@@ -15,8 +17,16 @@ export function getDefaultAppearance() {
 
 export function normalizeAppearance(appearance = {}) {
   const primary = appearance.primaryColor || DEFAULT_PRIMARY
+  const backgroundHeart =
+    appearance.backgroundHeartColor ||
+    appearance.primaryColor ||
+    DEFAULT_BACKGROUND_HEART
+
   return {
     primaryColor: /^#[0-9a-fA-F]{6}$/.test(primary) ? primary : DEFAULT_PRIMARY,
+    backgroundHeartColor: /^#[0-9a-fA-F]{6}$/.test(backgroundHeart)
+      ? backgroundHeart
+      : DEFAULT_BACKGROUND_HEART,
     heartOpacity: clamp(Number(appearance.heartOpacity ?? DEFAULT_APPEARANCE.heartOpacity), 0.1, 1),
   }
 }
@@ -118,15 +128,15 @@ export function buildPalette(primaryHex) {
 export function heartOpacityBounds(heartOpacity) {
   const strength = clamp(Number(heartOpacity), 0.1, 1)
   return {
-    opacityMin: 0.12 + strength * 0.35,
-    opacityMax: 0.3 + strength * 0.55,
+    opacityMin: 0.06 + strength * 0.44,
+    opacityMax: 0.18 + strength * 0.78,
   }
 }
 
 export const THEME_VARS_CACHE_KEY = 'romantic-site-theme-vars'
 export const THEME_APPEARANCE_CACHE_KEY = 'romantic-site-appearance'
 
-function collectThemeVars(palette, hearts) {
+function collectThemeVars(palette, hearts, backgroundHeartRgb) {
   const vars = {}
 
   Object.entries(palette).forEach(([key, value]) => {
@@ -137,6 +147,7 @@ function collectThemeVars(palette, hearts) {
     vars[`--theme-${key}`] = value
   })
 
+  vars['--background-heart-rgb'] = backgroundHeartRgb
   vars['--heart-opacity-min'] = String(hearts.opacityMin)
   vars['--heart-opacity-max'] = String(hearts.opacityMax)
   return vars
@@ -194,7 +205,9 @@ export function applySiteTheme(appearanceInput) {
   const appearance = normalizeAppearance(appearanceInput)
   const palette = buildPalette(appearance.primaryColor)
   const hearts = heartOpacityBounds(appearance.heartOpacity)
-  const vars = collectThemeVars(palette, hearts)
+  const backgroundHeart = hexToRgb(appearance.backgroundHeartColor)
+  const backgroundHeartRgb = `${backgroundHeart.r}, ${backgroundHeart.g}, ${backgroundHeart.b}`
+  const vars = collectThemeVars(palette, hearts, backgroundHeartRgb)
   const root = document.documentElement
 
   Object.entries(vars).forEach(([key, value]) => {

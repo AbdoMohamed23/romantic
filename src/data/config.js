@@ -28,6 +28,12 @@ export const config = {
       particleCount: 168,
       mobileParticleCount: 96,
     },
+    heartExplosion: {
+      duration: 2200,
+      swapRatio: 0.45,
+      heartCount: 52,
+      mobileHeartCount: 36,
+    },
     text: {
       wordDelay: 140,
     },

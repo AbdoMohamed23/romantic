@@ -1,13 +1,14 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useContent } from '../context/ContentContext'
 import {
   createFloatingHearts,
   getHeartCount,
   heartColor,
+  resolveHeartOpacity,
 } from '../utils/heartVisuals'
 
 function HeartBackground({ className = '' }) {
-  const { content } = useContent()
+  useContent()
   const heartsCache = useRef({ count: 0, hearts: [] })
   const [count, setCount] = useState(() => getHeartCount())
 
@@ -49,28 +50,31 @@ function HeartBackground({ className = '' }) {
   return (
     <div
       className={`heart-background pointer-events-none fixed inset-0 overflow-hidden ${className}`}
-      data-theme={content.appearance?.primaryColor ?? 'default'}
       aria-hidden="true"
     >
-      {hearts.map((heart) => (
-        <span
-          key={heart.id}
-          className="heart-background__item absolute select-none"
-          style={{
-            left: heart.left,
-            fontSize: `${heart.size}px`,
-            color: heartColor(heart.opacity),
-            '--heart-opacity': heart.opacity,
-            '--heart-duration': `${heart.duration}s`,
-            '--heart-delay': `${heart.delay}s`,
-            '--heart-drift': `${heart.drift}px`,
-          }}
-        >
-          ♥
-        </span>
-      ))}
+      {hearts.map((heart) => {
+        const opacity = resolveHeartOpacity(heart.opacityRatio)
+
+        return (
+          <span
+            key={heart.id}
+            className="heart-background__item absolute select-none"
+            style={{
+              left: heart.left,
+              fontSize: `${heart.size}px`,
+              color: heartColor(opacity),
+              '--heart-opacity': opacity,
+              '--heart-duration': `${heart.duration}s`,
+              '--heart-delay': `${heart.delay}s`,
+              '--heart-drift': `${heart.drift}px`,
+            }}
+          >
+            ♥
+          </span>
+        )
+      })}
     </div>
   )
 }
 
-export default memo(HeartBackground)
+export default HeartBackground

@@ -19,6 +19,16 @@ function readThemeRgb() {
   return value || config.hearts.rgb
 }
 
+function readBackgroundHeartRgb() {
+  if (typeof document === 'undefined') return config.hearts.rgb
+
+  const value = getComputedStyle(document.documentElement)
+    .getPropertyValue('--background-heart-rgb')
+    .trim()
+
+  return value || readThemeRgb()
+}
+
 export function getHeartOpacityBounds() {
   return {
     opacityMin: readThemeVar('--heart-opacity-min', config.hearts.opacityMin),
@@ -40,11 +50,11 @@ export function pickHeartOpacity() {
 }
 
 export function heartColor(opacity) {
-  return `rgba(${readThemeRgb()}, ${opacity})`
+  return `rgba(${readBackgroundHeartRgb()}, ${opacity})`
 }
 
 export function heartGlowShadow() {
-  return `0 0 12px rgba(${readThemeRgb()}, 0.35)`
+  return `0 0 12px rgba(${readBackgroundHeartRgb()}, 0.35)`
 }
 
 export function createFloatingHearts(count) {
@@ -52,11 +62,16 @@ export function createFloatingHearts(count) {
     id,
     left: `${1 + Math.random() * 98}%`,
     size: pickHeartSize(),
-    opacity: pickHeartOpacity(),
+    opacityRatio: Math.random(),
     delay: Math.random() * 10,
     duration: 9 + Math.random() * 10,
     drift: (Math.random() - 0.5) * 70,
   }))
+}
+
+export function resolveHeartOpacity(opacityRatio) {
+  const { opacityMin, opacityMax } = getHeartOpacityBounds()
+  return opacityMin + opacityRatio * (opacityMax - opacityMin)
 }
 
 export function getHeartCount() {

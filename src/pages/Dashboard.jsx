@@ -14,6 +14,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import ContentLoadingHearts from '../components/ContentLoadingHearts'
 import MemoryEditor from '../components/dashboard/MemoryEditor'
 import {
   DateInput,
@@ -71,11 +72,7 @@ function AdminLoginForm({ onLogin }) {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center">
-        <p className="text-sm text-rose-500">جاري تحميل المحتوى...</p>
-      </div>
-    )
+    return <ContentLoadingHearts />
   }
 
   return (
@@ -229,11 +226,7 @@ export default function Dashboard() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center">
-        <p className="text-sm text-rose-500">جاري تحميل المحتوى من قاعدة البيانات...</p>
-      </div>
-    )
+    return <ContentLoadingHearts />
   }
 
   const renderTab = () => {
@@ -304,7 +297,7 @@ export default function Dashboard() {
 
             <Field
               label="اللون الرئيسي"
-              hint="يُطبَّق على الأزرار، النصوص، الخلفية، والقلوب"
+              hint="يُطبَّق على الأزرار، النصوص، والخلفية"
             >
               <div className="flex flex-wrap items-center gap-3">
                 <input
@@ -328,6 +321,38 @@ export default function Dashboard() {
                   style={{ backgroundColor: content.appearance?.primaryColor || '#fb7185' }}
                 >
                   معاينة
+                </span>
+              </div>
+            </Field>
+
+            <Field
+              label="لون قلوب الخلفية"
+              hint="يُطبَّق على القلوب الطائرة في الخلفية فقط — لا يؤثر على أزرار الموقع"
+            >
+              <div className="flex flex-wrap items-center gap-3">
+                <input
+                  type="color"
+                  value={content.appearance?.backgroundHeartColor || '#be123c'}
+                  onChange={(e) => {
+                    updateField('appearance', 'backgroundHeartColor', e.target.value)
+                  }}
+                  className="h-11 w-14 cursor-pointer rounded-xl border border-rose-100 bg-white p-1"
+                />
+                <TextInput
+                  value={content.appearance?.backgroundHeartColor || '#be123c'}
+                  onChange={(v) => {
+                    if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+                      updateField('appearance', 'backgroundHeartColor', v)
+                    }
+                  }}
+                />
+                <span
+                  className="inline-flex h-9 min-w-9 items-center justify-center rounded-full px-3 text-sm text-rose-700"
+                  style={{
+                    color: content.appearance?.backgroundHeartColor || '#be123c',
+                  }}
+                >
+                  ♥
                 </span>
               </div>
             </Field>

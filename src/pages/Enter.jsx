@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { KeyRound } from 'lucide-react'
+import ContentLoadingHearts from '../components/ContentLoadingHearts'
 import FlowPage from '../components/FlowPage'
 import { RevealGroup, RevealItem } from '../components/Reveal'
 import { useContent } from '../context/ContentContext'
@@ -42,11 +43,7 @@ export default function Enter({ onLogin }) {
   }
 
   if (isLoading) {
-    return (
-      <FlowPage variant="center">
-        <p className="text-sm text-rose-500">جاري تحميل المحتوى...</p>
-      </FlowPage>
-    )
+    return <ContentLoadingHearts />
   }
 
   return (

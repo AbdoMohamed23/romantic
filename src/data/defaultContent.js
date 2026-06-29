@@ -5,6 +5,7 @@ export const defaultContent = {
   password: 'ThisIsLove',
   appearance: {
     primaryColor: '#fb7185',
+    backgroundHeartColor: '#be123c',
     heartOpacity: 0.65,
   },
   dates: {

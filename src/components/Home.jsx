@@ -1,23 +1,29 @@
-import { useCallback, useState } from 'react'
+import { startTransition, useCallback, useRef, useState } from 'react'
 import { config } from '../data/config'
 import { useAuth } from '../hooks/useAuth'
 import { useMusic } from '../context/MusicContext'
+import { getScreenMotion } from '../utils/motion'
 import Enter from '../pages/Enter'
 import Final from '../pages/Final'
 import Gallery from '../pages/Gallery'
 import Story from '../pages/Story'
 import Welcome from '../pages/Welcome'
-import FadeSwap from './FadeSwap'
+import HeartExplosionTransition from './HeartExplosionTransition'
 import LoveTransition from './LoveTransition'
 import RomanticShell from './RomanticShell'
 
 const STEPS = ['enter', 'welcome', 'story', 'gallery', 'final']
 const { skipIntroKey } = config.auth
+const screenMotion = getScreenMotion()
 
 const PREVIOUS_STEP = {
   story: 'welcome',
   gallery: 'story',
   final: 'gallery',
+}
+
+function prefersReducedMotion() {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
 function shouldSkipLoginIntro() {
@@ -28,74 +34,99 @@ export default function Home() {
   const { isAuthenticated, login } = useAuth()
   const { requestMusicStart, playMusic } = useMusic()
   const [step, setStep] = useState(() => (isAuthenticated ? 'welcome' : 'enter'))
-  const [heartOverlay, setHeartOverlay] = useState(false)
+  const [loginOverlay, setLoginOverlay] = useState(false)
   const [welcomeFadeDone, setWelcomeFadeDone] = useState(false)
-  const [calmWelcome, setCalmWelcome] = useState(isAuthenticated)
+  const [explosionTarget, setExplosionTarget] = useState(null)
+  const [pageFadeTick, setPageFadeTick] = useState(0)
+  const pendingStepRef = useRef(null)
+
+  const isTransitioning = loginOverlay || explosionTarget !== null
 
   const canGoBack =
-    isAuthenticated && Boolean(PREVIOUS_STEP[step]) && !heartOverlay
+    isAuthenticated && Boolean(PREVIOUS_STEP[step]) && !isTransitioning
 
-  const goTo = useCallback((nextStep) => {
-    if (STEPS.includes(nextStep) && nextStep !== step) {
-      setStep(nextStep)
+  const triggerPageFade = useCallback(() => {
+    setPageFadeTick((tick) => tick + 1)
+  }, [])
+
+  const goTo = useCallback((nextStep, withFade = true) => {
+    if (!STEPS.includes(nextStep) || nextStep === step) return
+    setStep(nextStep)
+    if (withFade) triggerPageFade()
+  }, [step, triggerPageFade])
+
+  const navigateWithExplosion = useCallback((nextStep) => {
+    if (isTransitioning || nextStep === step || !STEPS.includes(nextStep)) return
+
+    if (prefersReducedMotion()) {
+      goTo(nextStep)
+      return
     }
-  }, [step])
+
+    pendingStepRef.current = nextStep
+    setExplosionTarget(nextStep)
+  }, [goTo, isTransitioning, step])
 
   const handleBack = useCallback(() => {
     const previous = PREVIOUS_STEP[step]
-    if (previous) goTo(previous)
-  }, [goTo, step])
-
-  const completeLogin = useCallback(() => {
-    login()
-  }, [login])
+    if (previous) navigateWithExplosion(previous)
+  }, [navigateWithExplosion, step])
 
   const handleLogin = useCallback(() => {
     if (shouldSkipLoginIntro()) {
       sessionStorage.removeItem(skipIntroKey)
-      setCalmWelcome(true)
-      completeLogin()
+      login()
       requestMusicStart()
       void playMusic()
-      setStep('welcome')
+      goTo('welcome')
       return
     }
 
     setWelcomeFadeDone(false)
+    login()
     requestMusicStart()
     void playMusic()
-    setHeartOverlay(true)
-  }, [completeLogin, requestMusicStart, playMusic])
+    setLoginOverlay(true)
+  }, [goTo, login, requestMusicStart, playMusic])
 
-  const handleHeartsCovered = useCallback(() => {
-    setCalmWelcome(true)
-    completeLogin()
-    setStep('welcome')
-    setWelcomeFadeDone(true)
-  }, [completeLogin])
+  const handleLoveCovered = useCallback(() => {
+    startTransition(() => {
+      setStep('welcome')
+      triggerPageFade()
+      setWelcomeFadeDone(true)
+    })
+  }, [triggerPageFade])
 
-  const handleHeartsComplete = useCallback(() => {
-    setHeartOverlay(false)
+  const handleLoveComplete = useCallback(() => {
+    setLoginOverlay(false)
     setWelcomeFadeDone(false)
   }, [])
 
-  const handleWelcomeNext = useCallback(() => {
-    setCalmWelcome(false)
-    goTo('story')
-  }, [goTo])
+  const handleExplosionSwap = useCallback(() => {
+    const nextStep = pendingStepRef.current
+    if (nextStep) {
+      startTransition(() => {
+        setStep(nextStep)
+        triggerPageFade()
+      })
+    }
+  }, [triggerPageFade])
+
+  const handleExplosionComplete = useCallback(() => {
+    pendingStepRef.current = null
+    setExplosionTarget(null)
+  }, [])
 
   const renderStep = (key) => {
     switch (key) {
       case 'enter':
-        return heartOverlay ? null : <Enter onLogin={handleLogin} />
+        return loginOverlay ? null : <Enter onLogin={handleLogin} />
       case 'welcome':
-        return (
-          <Welcome soft={calmWelcome} onNext={handleWelcomeNext} />
-        )
+        return <Welcome onNext={() => navigateWithExplosion('story')} />
       case 'story':
-        return <Story onNext={() => goTo('gallery')} />
+        return <Story onNext={() => navigateWithExplosion('gallery')} />
       case 'gallery':
-        return <Gallery onNext={() => goTo('final')} />
+        return <Gallery onNext={() => navigateWithExplosion('final')} />
       case 'final':
         return <Final />
       default:
@@ -103,7 +134,11 @@ export default function Home() {
     }
   }
 
-  const showMusic = heartOverlay || (isAuthenticated && step !== 'enter')
+  const showMusic =
+    isAuthenticated &&
+    (step !== 'enter' || loginOverlay)
+
+  const pageFadeClass = pageFadeTick > 0 ? 'screen-fade-in' : ''
 
   return (
     <RomanticShell
@@ -111,15 +146,29 @@ export default function Home() {
       showBack={canGoBack}
       onBack={handleBack}
     >
-      <FadeSwap activeKey={step} className="flow-screen">
-        {renderStep}
-      </FadeSwap>
+      <div
+        key={`${step}-${pageFadeTick}`}
+        className={`flow-screen ${pageFadeClass}`.trim()}
+        style={{
+          '--screen-y': `${screenMotion.y}px`,
+          '--screen-fade-in': `${screenMotion.fadeIn}ms`,
+        }}
+      >
+        {renderStep(step)}
+      </div>
 
-      {heartOverlay ? (
+      {loginOverlay ? (
         <LoveTransition
-          onCovered={handleHeartsCovered}
-          onComplete={handleHeartsComplete}
+          onCovered={handleLoveCovered}
+          onComplete={handleLoveComplete}
           canExit={welcomeFadeDone}
+        />
+      ) : null}
+
+      {explosionTarget ? (
+        <HeartExplosionTransition
+          onSwap={handleExplosionSwap}
+          onComplete={handleExplosionComplete}
         />
       ) : null}
     </RomanticShell>
