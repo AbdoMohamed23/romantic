@@ -57,6 +57,54 @@ export function ContentProvider({ children }) {
     contentRef.current = content
   }, [content])
 
+  const [history, setHistory] = useState([])
+  const [historyIndex, setHistoryIndex] = useState(-1)
+
+  // Keep history synchronized with content updates
+  useEffect(() => {
+    if (!content) return
+
+    const timer = setTimeout(() => {
+      setHistory((prev) => {
+        if (historyIndex >= 0 && JSON.stringify(prev[historyIndex]) === JSON.stringify(content)) {
+          return prev
+        }
+        const nextHistory = prev.slice(0, historyIndex + 1)
+        if (nextHistory.length > 0 && JSON.stringify(nextHistory[nextHistory.length - 1]) === JSON.stringify(content)) {
+          return prev
+        }
+        const updated = [...nextHistory, content].slice(-50)
+        setHistoryIndex(updated.length - 1)
+        return updated
+      })
+    }, 400)
+
+    return () => clearTimeout(timer)
+  }, [content, historyIndex])
+
+  const undo = useCallback(() => {
+    if (historyIndex > 0) {
+      const prevIndex = historyIndex - 1
+      setHistoryIndex(prevIndex)
+      setContent(history[prevIndex])
+      contentRef.current = history[prevIndex]
+      setIsDirty(true)
+    }
+  }, [history, historyIndex])
+
+  const redo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      const nextIndex = historyIndex + 1
+      setHistoryIndex(nextIndex)
+      setContent(history[nextIndex])
+      contentRef.current = history[nextIndex]
+      setIsDirty(true)
+    }
+  }, [history, historyIndex])
+
+  const canUndo = historyIndex > 0
+  const canRedo = historyIndex < history.length - 1
+
   const patchContent = useCallback((updater) => {
     setContent((prev) => {
       const next = typeof updater === 'function' ? updater(prev) : updater
@@ -103,7 +151,7 @@ export function ContentProvider({ children }) {
       return
     }
 
-    loadFromDatabase().catch(() => {})
+    loadFromDatabase().catch(() => { })
   }, [loadFromDatabase])
 
   const saveChanges = useCallback(async (password) => {
@@ -269,6 +317,74 @@ export function ContentProvider({ children }) {
     [patchContent],
   )
 
+  const updateWishlistItem = useCallback(
+    (id, patch) => {
+      patchContent((prev) => ({
+        ...prev,
+        wishlist: (prev.wishlist ?? []).map((item) =>
+          item.id === id ? { ...item, ...patch } : item,
+        ),
+      }))
+    },
+    [patchContent],
+  )
+
+  const addWishlistItem = useCallback((text = '') => {
+    patchContent((prev) => {
+      const id = nextItemId(prev.wishlist ?? [])
+      return {
+        ...prev,
+        wishlist: [
+          ...(prev.wishlist ?? []),
+          { id, text, completed: false },
+        ],
+      }
+    })
+  }, [patchContent])
+
+  const removeWishlistItem = useCallback(
+    (id) => {
+      patchContent((prev) => ({
+        ...prev,
+        wishlist: (prev.wishlist ?? []).filter((item) => item.id !== id),
+      }))
+    },
+    [patchContent],
+  )
+
+  const toggleWishlistItem = useCallback(
+    (id) => {
+      let updated
+      setContent((prev) => {
+        const nextList = (prev.wishlist ?? []).map((item) =>
+          item.id === id ? { ...item, completed: !item.completed } : item
+        )
+        const next = { ...prev, wishlist: nextList }
+        contentRef.current = next
+        updated = next
+        return next
+      })
+      setIsDirty(true)
+
+      const pass =
+        sessionStorage.getItem('romantic-site-visitor-password') ||
+        sessionStorage.getItem('romantic-site-admin-password') ||
+        ''
+
+      if (pass && isSupabaseConfigured) {
+        saveRemoteContent(updated, pass)
+          .then(() => {
+            setIsDirty(false)
+            setSyncStatus('ready')
+          })
+          .catch((err) => {
+            console.error('Failed to auto-sync wishlist toggle:', err)
+          })
+      }
+    },
+    [isSupabaseConfigured],
+  )
+
   const uploadMemoryImage = useCallback(
     async (id, file) => {
       const image = await uploadAsset(file, 'story')
@@ -298,7 +414,7 @@ export function ContentProvider({ children }) {
   )
 
   const uploadMusic = useCallback(
-    async (file) => {
+    async (file, index = 0) => {
       if (!isAudioFile(file)) {
         throw new Error('الملف لازم يكون صوت (mp3, m4a, wav, ogg, flac...)')
       }
@@ -308,14 +424,31 @@ export function ContentProvider({ children }) {
 
       try {
         const url = await uploadAsset(file, 'music')
-        patchContent((prev) => ({
-          ...prev,
-          music: {
-            ...prev.music,
-            src: url,
+        patchContent((prev) => {
+          const currentTracks = [...(prev.music?.tracks || [])]
+          const newTrack = {
+            id: currentTracks[index]?.id || 'track-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+            title: currentTracks[index]?.title || file.name.split('.').slice(0, -1).join('.') || `أغنية ${index + 1}`,
             fileName: file.name,
-          },
-        }))
+            src: url,
+          }
+          currentTracks[index] = newTrack
+
+          const mainSrc = index === 0 ? url : (prev.music?.src || url)
+          const mainFileName = index === 0 ? file.name : (prev.music?.fileName || file.name)
+          const mainTitle = index === 0 ? newTrack.title : (prev.music?.title || newTrack.title)
+
+          return {
+            ...prev,
+            music: {
+              ...prev.music,
+              src: mainSrc,
+              fileName: mainFileName,
+              title: mainTitle,
+              tracks: currentTracks,
+            },
+          }
+        })
         return url
       } catch (error) {
         const message =
@@ -331,16 +464,50 @@ export function ContentProvider({ children }) {
     [patchContent],
   )
 
-  const removeMusic = useCallback(() => {
-    patchContent((prev) => ({
-      ...prev,
-      music: {
-        ...prev.music,
-        src: '',
-        fileName: '',
-      },
-    }))
+  const removeMusic = useCallback((index = 0) => {
+    patchContent((prev) => {
+      const currentTracks = [...(prev.music?.tracks || [])]
+      if (currentTracks[index]) {
+        currentTracks.splice(index, 1)
+      }
+
+      const firstTrack = currentTracks[0]
+      return {
+        ...prev,
+        music: {
+          ...prev.music,
+          src: firstTrack ? firstTrack.src : '',
+          fileName: firstTrack ? firstTrack.fileName : '',
+          title: firstTrack ? firstTrack.title : '',
+          tracks: currentTracks,
+        },
+      }
+    })
   }, [patchContent])
+
+  const updateMusicTrackTitle = useCallback(
+    (index, title) => {
+      patchContent((prev) => {
+        const currentTracks = [...(prev.music?.tracks || [])]
+        if (currentTracks[index]) {
+          currentTracks[index] = {
+            ...currentTracks[index],
+            title,
+          }
+        }
+        const mainTitle = index === 0 ? title : (prev.music?.title || title)
+        return {
+          ...prev,
+          music: {
+            ...prev.music,
+            title: mainTitle,
+            tracks: currentTracks,
+          },
+        }
+      })
+    },
+    [patchContent],
+  )
 
   const resetToDefaults = useCallback(() => {
     const next = structuredClone(defaultContent)
@@ -374,14 +541,24 @@ export function ContentProvider({ children }) {
       updateGalleryItem,
       addGalleryItem,
       removeGalleryItem,
+      updateWishlistItem,
+      addWishlistItem,
+      removeWishlistItem,
+      toggleWishlistItem,
       uploadMemoryImage,
       uploadGalleryImage,
       uploadMusic,
+      uploadMusic,
       removeMusic,
+      updateMusicTrackTitle,
       resetToDefaults,
       saveChanges,
       loadFromDatabase,
       verifyPassword,
+      undo,
+      redo,
+      canUndo,
+      canRedo,
     }),
     [
       content,
@@ -401,14 +578,23 @@ export function ContentProvider({ children }) {
       updateGalleryItem,
       addGalleryItem,
       removeGalleryItem,
+      updateWishlistItem,
+      addWishlistItem,
+      removeWishlistItem,
+      toggleWishlistItem,
       uploadMemoryImage,
       uploadGalleryImage,
       uploadMusic,
       removeMusic,
+      updateMusicTrackTitle,
       resetToDefaults,
       saveChanges,
       loadFromDatabase,
       verifyPassword,
+      undo,
+      redo,
+      canUndo,
+      canRedo,
     ],
   )
 

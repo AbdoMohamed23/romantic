@@ -20,40 +20,36 @@ export function MusicProvider({ children }) {
   const [isPlaying, setIsPlaying] = useState(() => readMusicPreference() === true)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0)
+
+  const tracks = useMemo(() => {
+    if (content?.music?.tracks && content.music.tracks.length > 0) {
+      return content.music.tracks
+    }
+    return [
+      {
+        id: 'default',
+        title: content?.music?.title || 'أغنيتنا',
+        fileName: content?.music?.fileName || '',
+        src: musicSrc || '',
+      },
+    ].filter((t) => t.src)
+  }, [content, musicSrc])
+
+  const currentTrack = tracks[currentTrackIndex] || tracks[0]
+  const activeMusicSrc = currentTrack?.src || ''
 
   useEffect(() => {
     const audio = audioRef.current
-    if (!audio || !musicSrc) return
-    audio.src = musicSrc
+    if (!audio || !activeMusicSrc) return
+    audio.src = activeMusicSrc
     audio.load()
     setCurrentTime(0)
     setDuration(0)
-  }, [musicSrc])
-
-  useEffect(() => {
-    const audio = audioRef.current
-    if (!audio) return undefined
-
-    const onTimeUpdate = () => setCurrentTime(audio.currentTime)
-    const onLoadedMetadata = () => setDuration(audio.duration || 0)
-    const onDurationChange = () => setDuration(audio.duration || 0)
-    const onEnded = () => {
-      setIsPlaying(false)
-      sessionStorage.setItem(MUSIC_KEY, 'false')
+    if (isPlaying) {
+      audio.play().catch(() => setIsPlaying(false))
     }
-
-    audio.addEventListener('timeupdate', onTimeUpdate)
-    audio.addEventListener('loadedmetadata', onLoadedMetadata)
-    audio.addEventListener('durationchange', onDurationChange)
-    audio.addEventListener('ended', onEnded)
-
-    return () => {
-      audio.removeEventListener('timeupdate', onTimeUpdate)
-      audio.removeEventListener('loadedmetadata', onLoadedMetadata)
-      audio.removeEventListener('durationchange', onDurationChange)
-      audio.removeEventListener('ended', onEnded)
-    }
-  }, [musicSrc])
+  }, [activeMusicSrc])
 
   const persistPreference = useCallback((playing) => {
     sessionStorage.setItem(MUSIC_KEY, String(playing))
@@ -62,7 +58,7 @@ export function MusicProvider({ children }) {
 
   const playMusic = useCallback(async () => {
     const audio = audioRef.current
-    if (!audio || !musicSrc) return false
+    if (!audio || !activeMusicSrc) return false
 
     audio.volume = content.music.volume
 
@@ -74,7 +70,7 @@ export function MusicProvider({ children }) {
       persistPreference(false)
       return false
     }
-  }, [content.music.volume, musicSrc, persistPreference])
+  }, [content.music.volume, activeMusicSrc, persistPreference])
 
   const pauseMusic = useCallback(() => {
     const audio = audioRef.current
@@ -90,6 +86,45 @@ export function MusicProvider({ children }) {
 
     await playMusic()
   }, [isPlaying, pauseMusic, playMusic])
+
+  const nextTrack = useCallback(() => {
+    if (tracks.length <= 1) return
+    setCurrentTrackIndex((prev) => (prev + 1) % tracks.length)
+  }, [tracks])
+
+  const prevTrack = useCallback(() => {
+    if (tracks.length <= 1) return
+    setCurrentTrackIndex((prev) => (prev - 1 + tracks.length) % tracks.length)
+  }, [tracks])
+
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return undefined
+
+    const onTimeUpdate = () => setCurrentTime(audio.currentTime)
+    const onLoadedMetadata = () => setDuration(audio.duration || 0)
+    const onDurationChange = () => setDuration(audio.duration || 0)
+    const onEnded = () => {
+      if (tracks.length > 1) {
+        nextTrack()
+      } else {
+        setIsPlaying(false)
+        sessionStorage.setItem(MUSIC_KEY, 'false')
+      }
+    }
+
+    audio.addEventListener('timeupdate', onTimeUpdate)
+    audio.addEventListener('loadedmetadata', onLoadedMetadata)
+    audio.addEventListener('durationchange', onDurationChange)
+    audio.addEventListener('ended', onEnded)
+
+    return () => {
+      audio.removeEventListener('timeupdate', onTimeUpdate)
+      audio.removeEventListener('loadedmetadata', onLoadedMetadata)
+      audio.removeEventListener('durationchange', onDurationChange)
+      audio.removeEventListener('ended', onEnded)
+    }
+  }, [activeMusicSrc, tracks, nextTrack])
 
   const seekTo = useCallback(
     (time) => {
@@ -136,10 +171,10 @@ export function MusicProvider({ children }) {
   const value = useMemo(
     () => ({
       audioRef,
-      hasSource: Boolean(musicSrc),
+      hasSource: Boolean(activeMusicSrc),
       isPlaying,
-      musicSrc,
-      musicTitle: content.music.title,
+      musicSrc: activeMusicSrc,
+      musicTitle: currentTrack?.title || 'أغنيتنا',
       currentTime,
       duration,
       progress,
@@ -149,24 +184,24 @@ export function MusicProvider({ children }) {
       playMusic,
       requestMusicStart,
       seekTo,
-      skipBackward,
-      skipForward,
+      skipBackward: prevTrack,
+      skipForward: nextTrack,
       togglePlayback,
       tryWelcomeMusicStart,
     }),
     [
-      content.music.title,
+      currentTrack?.title,
       currentTime,
       duration,
       isPlaying,
-      musicSrc,
+      activeMusicSrc,
       pauseMusic,
       playMusic,
       progress,
       requestMusicStart,
       seekTo,
-      skipBackward,
-      skipForward,
+      prevTrack,
+      nextTrack,
       togglePlayback,
       tryWelcomeMusicStart,
     ],
@@ -174,8 +209,8 @@ export function MusicProvider({ children }) {
 
   return (
     <MusicContext.Provider value={value}>
-      {musicSrc ? (
-        <audio ref={audioRef} src={musicSrc} loop preload="auto" />
+      {activeMusicSrc ? (
+        <audio ref={audioRef} src={activeMusicSrc} loop={tracks.length <= 1} preload="auto" />
       ) : null}
       {children}
     </MusicContext.Provider>

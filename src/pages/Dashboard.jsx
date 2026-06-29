@@ -8,7 +8,8 @@ import {
   KeyRound,
   LogOut,
   Music2,
-  RotateCcw,
+  Undo,
+  Redo,
   Save,
   Sparkles,
   Trash2,
@@ -34,6 +35,7 @@ const TABS = [
   { id: 'story', label: 'القصة', icon: Calendar },
   { id: 'memories', label: 'ذكريات القصة', icon: Calendar },
   { id: 'gallery', label: 'المعرض', icon: Image },
+  { id: 'wishlist', label: 'قائمة الأمنيات', icon: Sparkles },
   { id: 'final', label: 'الصفحة الأخيرة', icon: Heart },
 ]
 
@@ -156,15 +158,23 @@ export default function Dashboard() {
     updateGalleryItem,
     addGalleryItem,
     removeGalleryItem,
+    updateWishlistItem,
+    addWishlistItem,
+    removeWishlistItem,
     uploadMemoryImage,
     uploadGalleryImage,
     uploadMusic,
     removeMusic,
+    updateMusicTrackTitle,
     isMusicUploading,
     resetToDefaults,
     saveChanges,
     loadFromDatabase,
     verifyPassword,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useContent()
   const [activeTab, setActiveTab] = useState('general')
   const [isSaving, setIsSaving] = useState(false)
@@ -247,7 +257,7 @@ export default function Dashboard() {
             </Field>
             <Field
               label="كلمة مرور الموقع (للزوار)"
-              hint="الكلمة اللي هيدخل بيها الزائر — مش كلمة دخول الداشبورد"
+              hint="الكلمة التي يستخدمها شريكك لفتح الهدية"
             >
               <TextInput
                 value={content.password}
@@ -256,35 +266,19 @@ export default function Dashboard() {
                 }}
               />
             </Field>
-            <p className="-mt-2 rounded-xl border border-rose-100 bg-rose-50/80 px-3 py-2.5 text-xs leading-relaxed text-rose-600">
-              لتغيير كلمة المرور: ادخل الداشبورد بالكلمة <strong>الحالية</strong>، اكتب
-              الكلمة <strong>الجديدة</strong> هنا، ثم اضغط حفظ. الحفظ بيستخدم كلمة
-              الدخول اللي دخلت بيها — مش الكلمة الجديدة في الحقل.
-            </p>
-            <Field label="تاريخ بداية العلاقة">
-              <DateInput
-                value={content.dates.relationshipStart}
+            <Field
+              label="كلمة مرور لوحة التحكم (الداشبورد)"
+              hint="الكلمة التي تستخدمها لتسجيل الدخول إلى لوحة التحكم هذه وتعديل الموقع"
+            >
+              <TextInput
+                type="password"
+                value={adminPassword}
                 onChange={(v) => {
-                  updateDate('relationshipStart', `${v}T00:00:00`)
+                  updateAdminPassword(v)
                 }}
               />
             </Field>
-            <Field label="تاريخ أول لقاء">
-              <DateInput
-                value={content.dates.firstMeeting}
-                onChange={(v) => {
-                  updateDate('firstMeeting', v)
-                }}
-              />
-            </Field>
-            <Field label="تاريخ الاعتراف بالحب">
-              <DateInput
-                value={content.dates.loveConfession}
-                onChange={(v) => {
-                  updateDate('loveConfession', v)
-                }}
-              />
-            </Field>
+
 
             <div className="my-6 border-t border-rose-100 pt-6">
               <h3 className="font-display text-base font-semibold text-rose-900">
@@ -325,37 +319,7 @@ export default function Dashboard() {
               </div>
             </Field>
 
-            <Field
-              label="لون قلوب الخلفية"
-              hint="يُطبَّق على القلوب الطائرة في الخلفية فقط — لا يؤثر على أزرار الموقع"
-            >
-              <div className="flex flex-wrap items-center gap-3">
-                <input
-                  type="color"
-                  value={content.appearance?.backgroundHeartColor || '#be123c'}
-                  onChange={(e) => {
-                    updateField('appearance', 'backgroundHeartColor', e.target.value)
-                  }}
-                  className="h-11 w-14 cursor-pointer rounded-xl border border-rose-100 bg-white p-1"
-                />
-                <TextInput
-                  value={content.appearance?.backgroundHeartColor || '#be123c'}
-                  onChange={(v) => {
-                    if (/^#[0-9a-fA-F]{6}$/.test(v)) {
-                      updateField('appearance', 'backgroundHeartColor', v)
-                    }
-                  }}
-                />
-                <span
-                  className="inline-flex h-9 min-w-9 items-center justify-center rounded-full px-3 text-sm text-rose-700"
-                  style={{
-                    color: content.appearance?.backgroundHeartColor || '#be123c',
-                  }}
-                >
-                  ♥
-                </span>
-              </div>
-            </Field>
+
 
             <Field
               label="شفافية القلوب الطائرة"
@@ -397,19 +361,12 @@ export default function Dashboard() {
         )
 
       case 'music':
+        const tracks = content.music?.tracks || []
         return (
           <Section
             title="الموسيقى"
-            description="الأغنية التي تُشغّل في الموقع"
+            description="يمكنك رفع وتسمية حتى 5 ملفات صوتية تعمل كقائمة تشغيل متتالية"
           >
-            <Field label="عنوان الأغنية">
-              <TextInput
-                value={content.music.title}
-                onChange={(v) => {
-                  updateField('music', 'title', v)
-                }}
-              />
-            </Field>
             <Field label="مستوى الصوت (0 - 1)">
               <input
                 type="range"
@@ -426,65 +383,85 @@ export default function Dashboard() {
                 {Math.round(content.music.volume * 100)}%
               </span>
             </Field>
-            <Field label="ملف الأغنية" hint={content.music.fileName || 'لا يوجد ملف'}>
-              {syncError && activeTab === 'music' ? (
-                <p className="mb-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-600">
-                  {syncError}
-                </p>
-              ) : null}
-              <label
-                className={`relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-6 text-sm transition ${
-                  isMusicUploading
-                    ? 'border-rose-300 bg-rose-50 text-rose-500'
-                    : 'border-rose-200 bg-rose-50/50 text-rose-500 hover:border-rose-300'
-                } ${isMusicUploading ? 'pointer-events-none opacity-80' : ''}`}
-              >
-                {isMusicUploading ? (
-                  <>
-                    <span className="h-6 w-6 animate-spin rounded-full border-2 border-rose-200 border-t-rose-500" />
-                    <span className="font-medium">جاري رفع الملف...</span>
-                    <span className="text-xs text-rose-400">لا تغلق الصفحة</span>
-                  </>
-                ) : (
-                  <>
-                    <Music2 size={18} />
-                    <span>رفع أي ملف صوت</span>
-                    <span className="text-xs text-rose-400">
-                      mp3 · m4a · wav · ogg · flac · aac · webm
-                    </span>
-                  </>
-                )}
-                <input
-                  type="file"
-                  accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac,.webm,.opus,.mpeg,.mpga"
-                  className="hidden"
-                  disabled={isMusicUploading}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) {
-                      uploadMusic(file).catch(() => {})
-                    }
-                    e.target.value = ''
-                  }}
-                />
-              </label>
-            </Field>
-            {musicSrc ? (
-              <div className="space-y-3">
-                <audio controls src={musicSrc} className="w-full" key={musicSrc} />
-                <button
-                  type="button"
-                  disabled={isMusicUploading}
-                  onClick={() => removeMusic()}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-medium text-rose-500 transition hover:border-rose-300 hover:bg-rose-50 disabled:opacity-50"
-                >
-                  <Trash2 size={16} />
-                  حذف الأغنية
-                </button>
-              </div>
-            ) : (
-              <p className="text-sm text-rose-400">لا يوجد ملف موسيقى حالياً</p>
-            )}
+
+            <div className="space-y-6 pt-4 border-t border-rose-100">
+              <h3 className="font-display text-sm font-semibold text-rose-900">الملفات الصوتية المرفوعة ({tracks.length} / 5)</h3>
+              
+              {tracks.map((track, idx) => (
+                <div key={track.id} className="rounded-2xl border border-rose-100 bg-rose-50/20 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-rose-400">الأغنية رقم {idx + 1}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeMusic(idx)}
+                      className="text-xs text-rose-500 hover:text-rose-700 flex items-center gap-1 font-semibold"
+                    >
+                      <Trash2 size={12} />
+                      حذف
+                    </button>
+                  </div>
+                  
+                  <Field label="عنوان الأغنية">
+                    <TextInput
+                      value={track.title}
+                      onChange={(v) => {
+                        updateMusicTrackTitle(idx, v)
+                      }}
+                    />
+                  </Field>
+                  
+                  <p className="text-xs text-rose-400 truncate">الملف: {track.fileName || 'ملف خارجي'}</p>
+                  
+                  <audio controls src={track.src} className="w-full h-8" key={track.src} />
+                </div>
+              ))}
+
+              {tracks.length < 5 && (
+                <div className="space-y-3">
+                  <span className="text-xs font-semibold text-rose-400">إضافة أغنية جديدة</span>
+                  {syncError && activeTab === 'music' ? (
+                    <p className="mb-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-600">
+                      {syncError}
+                    </p>
+                  ) : null}
+                  <label
+                    className={`relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-6 text-sm transition ${isMusicUploading
+                        ? 'border-rose-300 bg-rose-50 text-rose-500'
+                        : 'border-rose-200 bg-rose-50/50 text-rose-500 hover:border-rose-300'
+                      } ${isMusicUploading ? 'pointer-events-none opacity-80' : ''}`}
+                  >
+                    {isMusicUploading ? (
+                      <>
+                        <span className="h-6 w-6 animate-spin rounded-full border-2 border-rose-200 border-t-rose-500" />
+                        <span className="font-medium">جاري رفع الملف...</span>
+                        <span className="text-xs text-rose-400">لا تغلق الصفحة</span>
+                      </>
+                    ) : (
+                      <>
+                        <Music2 size={18} />
+                        <span>اضغط هنا لرفع ملف صوتي جديد (الحد الأقصى 5 أغاني)</span>
+                        <span className="text-xs text-rose-400">
+                          mp3 · m4a · wav · ogg · flac · aac · webm
+                        </span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac,.webm,.opus,.mpeg,.mpga"
+                      className="hidden"
+                      disabled={isMusicUploading}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          uploadMusic(file, tracks.length).catch(() => { })
+                        }
+                        e.target.value = ''
+                      }}
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
           </Section>
         )
 
@@ -528,6 +505,14 @@ export default function Dashboard() {
       case 'welcome':
         return (
           <Section title="صفحة الترحيب" description="أول صفحة بعد الدخول">
+            <Field label="تاريخ بداية العلاقة">
+              <DateInput
+                value={content.dates.relationshipStart}
+                onChange={(v) => {
+                  updateDate('relationshipStart', `${v}T00:00:00`)
+                }}
+              />
+            </Field>
             <Field label="العنوان الصغير">
               <TextInput
                 value={content.welcome.eyebrow}
@@ -595,6 +580,14 @@ export default function Dashboard() {
                     }}
                   />
                 </Field>
+                <Field label="تاريخ أول لقاء">
+                  <DateInput
+                    value={content.dates.firstMeeting}
+                    onChange={(v) => {
+                      updateDate('firstMeeting', v)
+                    }}
+                  />
+                </Field>
                 <Field label="الوصف">
                   <TextArea
                     value={content.story.firstMeeting.description}
@@ -614,6 +607,14 @@ export default function Dashboard() {
                     value={content.story.loveConfession.label}
                     onChange={(v) => {
                       updateNestedField('story', 'loveConfession', 'label', v)
+                    }}
+                  />
+                </Field>
+                <Field label="تاريخ الاعتراف بالحب">
+                  <DateInput
+                    value={content.dates.loveConfession}
+                    onChange={(v) => {
+                      updateDate('loveConfession', v)
                     }}
                   />
                 </Field>
@@ -659,8 +660,15 @@ export default function Dashboard() {
                   onChange={(id, patch) => {
                     updateMemory(id, patch)
                   }}
-                  onImageUpload={(id, file) => {
-                    uploadMemoryImage(id, file).catch(() => {})
+                  onImageUpload={async (id, file) => {
+                    try {
+                      setSaveMessage('جاري رفع وضغط الصورة...')
+                      await uploadMemoryImage(id, file)
+                      setSaveMessage('✓ تم رفع الصورة بنجاح!')
+                    } catch (err) {
+                      console.error('Upload error:', err)
+                      setSaveMessage(`✗ فشل الرفع: ${err.message || 'مشكلة في الاتصال بسيرفر التخزين'}`)
+                    }
                   }}
                   onImageRemove={(id) => {
                     updateMemory(id, { image: '' })
@@ -713,42 +721,49 @@ export default function Dashboard() {
             </Section>
 
             <div className="mt-4">
-            <Section
-              title="صور الألبوم"
-              description="صورة + تاريخ + وصف — صفحة المعرض فقط (تُضغط تلقائياً عند الرفع)"
-            >
-              <div className="space-y-4">
-                {(content.galleryItems ?? []).map((item, index) => (
-                  <MemoryEditor
-                    key={item.id}
-                    memory={item}
-                    index={index}
-                    itemLabel="صورة"
-                    imageHint="رفع صورة"
-                    onChange={(id, patch) => {
-                      updateGalleryItem(id, patch)
-                    }}
-                    onImageUpload={(id, file) => {
-                      uploadGalleryImage(id, file).catch(() => {})
-                    }}
-                    onImageRemove={(id) => {
-                      updateGalleryItem(id, { image: '' })
-                    }}
-                    onRemove={removeGalleryItem}
-                    canRemove={(content.galleryItems ?? []).length > 0}
-                  />
-                ))}
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  addGalleryItem()
-                }}
-                className="w-full rounded-xl border border-dashed border-rose-200 py-3 text-sm font-medium text-rose-500 transition hover:border-rose-300 hover:bg-rose-50"
+              <Section
+                title="صور الألبوم"
+                description="صورة + تاريخ + وصف — صفحة المعرض فقط (تُضغط تلقائياً عند الرفع)"
               >
-                + إضافة صورة للمعرض
-              </button>
-            </Section>
+                <div className="space-y-4">
+                  {(content.galleryItems ?? []).map((item, index) => (
+                    <MemoryEditor
+                      key={item.id}
+                      memory={item}
+                      index={index}
+                      itemLabel="صورة"
+                      imageHint="رفع صورة"
+                      onChange={(id, patch) => {
+                        updateGalleryItem(id, patch)
+                      }}
+                      onImageUpload={async (id, file) => {
+                        try {
+                          setSaveMessage('جاري رفع وضغط الصورة...')
+                          await uploadGalleryImage(id, file)
+                          setSaveMessage('✓ تم رفع الصورة بنجاح!')
+                        } catch (err) {
+                          console.error('Upload error:', err)
+                          setSaveMessage(`✗ فشل الرفع: ${err.message || 'مشكلة في الاتصال بسيرفر التخزين'}`)
+                        }
+                      }}
+                      onImageRemove={(id) => {
+                        updateGalleryItem(id, { image: '' })
+                      }}
+                      onRemove={removeGalleryItem}
+                      canRemove={(content.galleryItems ?? []).length > 0}
+                    />
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    addGalleryItem()
+                  }}
+                  className="w-full rounded-xl border border-dashed border-rose-200 py-3 text-sm font-medium text-rose-500 transition hover:border-rose-300 hover:bg-rose-50"
+                >
+                  + إضافة صورة للمعرض
+                </button>
+              </Section>
             </div>
           </>
         )
@@ -781,6 +796,65 @@ export default function Dashboard() {
                 rows={6}
               />
             </Field>
+          </Section>
+        )
+
+      case 'wishlist':
+        return (
+          <Section
+            title="قائمة الأمنيات"
+            description="حاجات نفسي نعملها سوا — تقدر تضيف وتعدل وتمسح العناصر"
+          >
+            <div className="space-y-4">
+              {(content.wishlist ?? []).map((item, index) => (
+                <div
+                  key={item.id}
+                  className="rounded-2xl border border-rose-100 bg-rose-50/20 p-4 space-y-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-rose-400">
+                      عنصر #{index + 1}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeWishlistItem(item.id)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-rose-400 transition hover:bg-rose-50 hover:text-rose-600"
+                      title="حذف"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  <Field label="نص الأمنية">
+                    <TextInput
+                      value={item.text}
+                      onChange={(v) => {
+                        updateWishlistItem(item.id, { text: v })
+                      }}
+                    />
+                  </Field>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={item.completed}
+                      onChange={(e) => {
+                        updateWishlistItem(item.id, { completed: e.target.checked })
+                      }}
+                      className="h-4 w-4 rounded border-rose-200 text-rose-500 focus:ring-rose-200"
+                    />
+                    <span className="text-xs text-rose-800 font-medium">تم إنجازها</span>
+                  </label>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                addWishlistItem('')
+              }}
+              className="mt-4 w-full rounded-xl border border-dashed border-rose-200 py-3 text-sm font-medium text-rose-500 transition hover:border-rose-300 hover:bg-rose-50"
+            >
+              + إضافة عنصر جديد لقائمة الأمنيات
+            </button>
           </Section>
         )
 
@@ -820,6 +894,24 @@ export default function Dashboard() {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
+              onClick={redo}
+              disabled={!canRedo}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-rose-200 bg-white text-rose-600 shadow-sm transition hover:bg-rose-50 disabled:opacity-40 disabled:pointer-events-none active:scale-95"
+              title="إعادة التعديل"
+            >
+              <Redo size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={undo}
+              disabled={!canUndo}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-rose-200 bg-white text-rose-600 shadow-sm transition hover:bg-rose-50 disabled:opacity-40 disabled:pointer-events-none active:scale-95"
+              title="رجوع عن آخر تعديل"
+            >
+              <Undo size={14} />
+            </button>
+            <button
+              type="button"
               onClick={handleSave}
               disabled={isSaving || syncStatus === 'loading' || !isDirty}
               className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-rose-400 to-pink-400 px-4 py-2 text-xs font-semibold text-white shadow-md transition hover:from-rose-500 hover:to-pink-500 disabled:cursor-not-allowed disabled:opacity-50"
@@ -834,18 +926,6 @@ export default function Dashboard() {
             >
               <ExternalLink size={14} />
               معاينة الموقع
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (window.confirm('استعادة كل المحتوى للقيم الافتراضية؟')) {
-                  resetToDefaults()
-                }
-              }}
-              className="flex items-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-medium text-rose-500 transition hover:bg-rose-50"
-            >
-              <RotateCcw size={14} />
-              استعادة
             </button>
             <button
               type="button"
@@ -864,11 +944,10 @@ export default function Dashboard() {
               key={id}
               type="button"
               onClick={() => setActiveTab(id)}
-              className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition ${
-                activeTab === id
+              className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition ${activeTab === id
                   ? 'bg-gradient-to-r from-rose-400 to-pink-400 text-white shadow-md'
                   : 'bg-white/80 text-rose-600 hover:bg-white'
-              }`}
+                }`}
             >
               <Icon size={14} />
               {label}

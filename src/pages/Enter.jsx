@@ -26,7 +26,7 @@ export default function Enter({ onLogin }) {
     setError('')
 
     try {
-      const isValid = await verifyPassword(password)
+      const isValid = password === content.password
       if (!isValid) {
         setError(content.login.error)
         setShake(true)
@@ -34,7 +34,7 @@ export default function Enter({ onLogin }) {
         return
       }
 
-      onLogin()
+      onLogin(password)
     } catch {
       setError('تعذّر التحقق من كلمة المرور — حاول مرة أخرى')
     } finally {
