@@ -272,9 +272,9 @@ export default function Dashboard() {
             >
               <TextInput
                 type="password"
-                value={adminPassword}
+                value={content.adminPassword || ''}
                 onChange={(v) => {
-                  updateAdminPassword(v)
+                  updateRoot('adminPassword', v)
                 }}
               />
             </Field>

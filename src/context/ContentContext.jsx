@@ -175,7 +175,7 @@ export function ContentProvider({ children }) {
       await saveRemoteContent(snapshot, password)
 
       const nextLoginPassword =
-        snapshot.password && snapshot.password !== password ? snapshot.password : null
+        snapshot.adminPassword && snapshot.adminPassword !== password ? snapshot.adminPassword : null
 
       if (nextLoginPassword) {
         setAdminPasswordForSync(nextLoginPassword)

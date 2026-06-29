@@ -3,6 +3,7 @@ import { musicAsset } from './musicAsset'
 export const defaultContent = {
   siteName: 'هدية حب',
   password: 'ThisIsLove',
+  adminPassword: 'ThisIsLove',
   appearance: {
     primaryColor: '#fb7185',
     backgroundHeartColor: '#be123c',
