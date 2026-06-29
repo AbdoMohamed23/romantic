@@ -22,11 +22,11 @@ export const config = {
       y: 16,
       ease: [0.22, 1, 0.36, 1],
     },
-    loginReveal: {
-      burstDuration: 3.2,
-      exitDuration: 3.2,
-      heartCount: 480,
-      mobileHeartCount: 280,
+    loveTransition: {
+      expandDuration: 2.8,
+      revealDuration: 3,
+      particleCount: 168,
+      mobileParticleCount: 96,
     },
     text: {
       wordDelay: 140,

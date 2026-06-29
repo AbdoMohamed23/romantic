@@ -70,16 +70,3 @@ export function getHeartCount() {
     ? Math.round(config.hearts.count * config.hearts.mobileRatio)
     : config.hearts.count
 }
-
-export function getLoginRevealHeartCount() {
-  if (typeof window === 'undefined') {
-    return config.animations.loginReveal.heartCount
-  }
-
-  const isReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  if (isReducedMotion) return 0
-
-  const isMobile = window.matchMedia('(max-width: 640px)').matches
-  const { heartCount, mobileHeartCount } = config.animations.loginReveal
-  return isMobile ? mobileHeartCount : heartCount
-}

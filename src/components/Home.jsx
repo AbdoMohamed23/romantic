@@ -8,7 +8,7 @@ import Gallery from '../pages/Gallery'
 import Story from '../pages/Story'
 import Welcome from '../pages/Welcome'
 import FadeSwap from './FadeSwap'
-import LoginHeartBurst from './LoginHeartBurst'
+import LoveTransition from './LoveTransition'
 import RomanticShell from './RomanticShell'
 
 const STEPS = ['enter', 'welcome', 'story', 'gallery', 'final']
@@ -87,7 +87,7 @@ export default function Home() {
   const renderStep = (key) => {
     switch (key) {
       case 'enter':
-        return <Enter onLogin={handleLogin} />
+        return heartOverlay ? null : <Enter onLogin={handleLogin} />
       case 'welcome':
         return (
           <Welcome soft={calmWelcome} onNext={handleWelcomeNext} />
@@ -116,7 +116,7 @@ export default function Home() {
       </FadeSwap>
 
       {heartOverlay ? (
-        <LoginHeartBurst
+        <LoveTransition
           onCovered={handleHeartsCovered}
           onComplete={handleHeartsComplete}
           canExit={welcomeFadeDone}

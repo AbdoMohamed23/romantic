@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { getScreenMotion } from '../utils/motion'
 
-const INSTANT_ENTER_KEYS = new Set(['welcome'])
+const INSTANT_ENTER_KEYS = new Set([])
 
 export default function FadeSwap({
   activeKey,
