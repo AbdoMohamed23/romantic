@@ -198,10 +198,8 @@ export function ContentProvider({ children }) {
   }, [])
 
   const verifyPassword = useCallback(async (password) => {
-    if (!isSupabaseConfigured) {
-      throw new Error('تعذّر الاتصال بالخادم')
-    }
-    return verifySitePassword(password)
+    const expected = contentRef.current?.adminPassword || contentRef.current?.password || 'ThisIsLove'
+    return password === expected
   }, [])
 
   const updateField = useCallback(

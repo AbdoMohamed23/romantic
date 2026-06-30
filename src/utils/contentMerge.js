@@ -69,7 +69,7 @@ export function mergeContent(stored) {
       ...defaultContent.appearance,
       ...stored.appearance,
     }),
-    memories: stored.memories?.length ? stored.memories : defaultContent.memories,
+    memories: stored.memories ?? [],
     galleryItems: resolveGalleryItems(stored),
   }
 }
