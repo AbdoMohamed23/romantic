@@ -196,20 +196,12 @@ CREATE POLICY "romantic_assets_public_delete"
 --       "date":  "YYYY-MM-DD",
 --       "text":  ""
 --     }
---   ],
---
---   "wishlist": [              ← قائمة الأمنيات
---     {
---       "id":        1,
---       "text":      "",        ← نص الأمنية
---       "completed": false      ← هل تم إنجازها؟
---     }
 --   ]
 -- }
 --
 -- ★ الفرق بين romantic و romantic-site:
---   • romantic     → nextButton, memoriesButton, finalButton مستخدمة (أزرار التنقل بين الصفحات)
---   • romantic-site → هذه الأزرار موجودة في الداشبورد لكن التنقل يتم بالسكرول وليس الأزرار
+--   • romantic     → nextButton, memoriesButton, finalButton مستخدمة للتنقل بين الصفحات
+--   • romantic-site → لا توجد أزرار للتنقل، والتنقل يعتمد بالكامل على السكرول
 
 -- ─── 5. مثال تهيئة البيانات الأولية (اختياري) ───────────────────
 -- شغّل هذا لو أردت ملء البيانات من البداية مرة واحدة:
@@ -245,8 +237,7 @@ SET data = jsonb_build_object(
   'gallery', jsonb_build_object('eyebrow', '', 'title', '', 'finalButton', ''),
   'final',   jsonb_build_object('eyebrow', '', 'title', '', 'text', ''),
   'memories',    '[]'::jsonb,
-  'galleryItems','[]'::jsonb,
-  'wishlist',    '[]'::jsonb
+  'galleryItems','[]'::jsonb
 ),
 updated_at = now()
 WHERE id = 1;

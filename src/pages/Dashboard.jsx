@@ -35,7 +35,6 @@ const TABS = [
   { id: 'story', label: 'القصة', icon: Calendar },
   { id: 'memories', label: 'ذكريات القصة', icon: Calendar },
   { id: 'gallery', label: 'المعرض', icon: Image },
-  { id: 'wishlist', label: 'قائمة الأمنيات', icon: Sparkles },
   { id: 'final', label: 'الصفحة الأخيرة', icon: Heart },
 ]
 
@@ -158,16 +157,12 @@ export default function Dashboard() {
     updateGalleryItem,
     addGalleryItem,
     removeGalleryItem,
-    updateWishlistItem,
-    addWishlistItem,
-    removeWishlistItem,
     uploadMemoryImage,
     uploadGalleryImage,
     uploadMusic,
     removeMusic,
     updateMusicTrackTitle,
     isMusicUploading,
-    resetToDefaults,
     saveChanges,
     loadFromDatabase,
     verifyPassword,
@@ -796,64 +791,7 @@ export default function Dashboard() {
           </Section>
         )
 
-      case 'wishlist':
-        return (
-          <Section
-            title="قائمة الأمنيات"
-            description="حاجات نفسي نعملها سوا — تقدر تضيف وتعدل وتمسح العناصر"
-          >
-            <div className="space-y-4">
-              {(content.wishlist ?? []).map((item, index) => (
-                <div
-                  key={item.id}
-                  className="rounded-2xl border border-rose-100 bg-rose-50/20 p-4 space-y-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-rose-400">
-                      عنصر #{index + 1}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => removeWishlistItem(item.id)}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-rose-400 transition hover:bg-rose-50 hover:text-rose-600"
-                      title="حذف"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                  <Field label="نص الأمنية">
-                    <TextInput
-                      value={item.text}
-                      onChange={(v) => {
-                        updateWishlistItem(item.id, { text: v })
-                      }}
-                    />
-                  </Field>
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={item.completed}
-                      onChange={(e) => {
-                        updateWishlistItem(item.id, { completed: e.target.checked })
-                      }}
-                      className="h-4 w-4 rounded border-rose-200 text-rose-500 focus:ring-rose-200"
-                    />
-                    <span className="text-xs text-rose-800 font-medium">تم إنجازها</span>
-                  </label>
-                </div>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                addWishlistItem('')
-              }}
-              className="mt-4 w-full rounded-xl border border-dashed border-rose-200 py-3 text-sm font-medium text-rose-500 transition hover:border-rose-300 hover:bg-rose-50"
-            >
-              + إضافة عنصر جديد لقائمة الأمنيات
-            </button>
-          </Section>
-        )
+
 
       default:
         return null

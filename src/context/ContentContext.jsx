@@ -315,73 +315,6 @@ export function ContentProvider({ children }) {
     [patchContent],
   )
 
-  const updateWishlistItem = useCallback(
-    (id, patch) => {
-      patchContent((prev) => ({
-        ...prev,
-        wishlist: (prev.wishlist ?? []).map((item) =>
-          item.id === id ? { ...item, ...patch } : item,
-        ),
-      }))
-    },
-    [patchContent],
-  )
-
-  const addWishlistItem = useCallback((text = '') => {
-    patchContent((prev) => {
-      const id = nextItemId(prev.wishlist ?? [])
-      return {
-        ...prev,
-        wishlist: [
-          ...(prev.wishlist ?? []),
-          { id, text, completed: false },
-        ],
-      }
-    })
-  }, [patchContent])
-
-  const removeWishlistItem = useCallback(
-    (id) => {
-      patchContent((prev) => ({
-        ...prev,
-        wishlist: (prev.wishlist ?? []).filter((item) => item.id !== id),
-      }))
-    },
-    [patchContent],
-  )
-
-  const toggleWishlistItem = useCallback(
-    (id) => {
-      let updated
-      setContent((prev) => {
-        const nextList = (prev.wishlist ?? []).map((item) =>
-          item.id === id ? { ...item, completed: !item.completed } : item
-        )
-        const next = { ...prev, wishlist: nextList }
-        contentRef.current = next
-        updated = next
-        return next
-      })
-      setIsDirty(true)
-
-      const pass =
-        sessionStorage.getItem('romantic-site-visitor-password') ||
-        sessionStorage.getItem('romantic-site-admin-password') ||
-        ''
-
-      if (pass && isSupabaseConfigured) {
-        saveRemoteContent(updated, pass)
-          .then(() => {
-            setIsDirty(false)
-            setSyncStatus('ready')
-          })
-          .catch((err) => {
-            console.error('Failed to auto-sync wishlist toggle:', err)
-          })
-      }
-    },
-    [isSupabaseConfigured],
-  )
 
   const uploadMemoryImage = useCallback(
     async (id, file) => {
@@ -538,16 +471,6 @@ export function ContentProvider({ children }) {
     [patchContent, getInitialTracks],
   )
 
-  const resetToDefaults = useCallback(() => {
-    const next = structuredClone(defaultContent)
-    contentRef.current = next
-    setContent(next)
-    applySiteTheme(next.appearance)
-    setIsDirty(true)
-    setSyncStatus('ready')
-    setSyncError('')
-  }, [])
-
   const musicSrc = resolveMusicSrc(content)
 
   const value = useMemo(
@@ -570,17 +493,11 @@ export function ContentProvider({ children }) {
       updateGalleryItem,
       addGalleryItem,
       removeGalleryItem,
-      updateWishlistItem,
-      addWishlistItem,
-      removeWishlistItem,
-      toggleWishlistItem,
       uploadMemoryImage,
       uploadGalleryImage,
       uploadMusic,
-      uploadMusic,
       removeMusic,
       updateMusicTrackTitle,
-      resetToDefaults,
       saveChanges,
       loadFromDatabase,
       verifyPassword,
@@ -607,16 +524,11 @@ export function ContentProvider({ children }) {
       updateGalleryItem,
       addGalleryItem,
       removeGalleryItem,
-      updateWishlistItem,
-      addWishlistItem,
-      removeWishlistItem,
-      toggleWishlistItem,
       uploadMemoryImage,
       uploadGalleryImage,
       uploadMusic,
       removeMusic,
       updateMusicTrackTitle,
-      resetToDefaults,
       saveChanges,
       loadFromDatabase,
       verifyPassword,
