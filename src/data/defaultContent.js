@@ -61,4 +61,5 @@ export const defaultContent = {
   },
   memories: [],
   galleryItems: [],
+  wishlist: [],
 }

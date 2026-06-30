@@ -1,4 +1,5 @@
 import { startTransition, useCallback, useRef, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { config } from '../data/config'
 import { useAuth } from '../hooks/useAuth'
 import { useMusic } from '../context/MusicContext'
@@ -11,6 +12,7 @@ import Welcome from '../pages/Welcome'
 import HeartExplosionTransition from './HeartExplosionTransition'
 import LoveTransition from './LoveTransition'
 import RomanticShell from './RomanticShell'
+import Wishlist from './Wishlist'
 
 const STEPS = ['enter', 'welcome', 'story', 'gallery', 'final']
 const { skipIntroKey } = config.auth
@@ -38,6 +40,7 @@ export default function Home() {
   const [welcomeFadeDone, setWelcomeFadeDone] = useState(false)
   const [explosionTarget, setExplosionTarget] = useState(null)
   const [pageFadeTick, setPageFadeTick] = useState(0)
+  const [showWishlist, setShowWishlist] = useState(false)
   const pendingStepRef = useRef(null)
 
   const isTransitioning = loginOverlay || explosionTarget !== null
@@ -143,19 +146,37 @@ export default function Home() {
   return (
     <RomanticShell
       showMusic={showMusic}
-      showBack={canGoBack}
+      showBack={showWishlist ? false : canGoBack}
       onBack={handleBack}
+      showWishlistToggle={isAuthenticated && (step !== 'enter' || loginOverlay)}
+      onWishlistToggle={() => setShowWishlist((prev) => !prev)}
+      isWishlistOpen={showWishlist}
     >
-      <div
-        key={`${step}-${pageFadeTick}`}
-        className={`flow-screen ${pageFadeClass}`.trim()}
-        style={{
-          '--screen-y': `${screenMotion.y}px`,
-          '--screen-fade-in': `${screenMotion.fadeIn}ms`,
-        }}
-      >
-        {renderStep(step)}
-      </div>
+      <AnimatePresence mode="wait">
+        {showWishlist ? (
+          <motion.div
+            key="wishlist-view"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.25 }}
+            className="w-full flex-1 flex flex-col justify-start"
+          >
+            <Wishlist />
+          </motion.div>
+        ) : (
+          <motion.div
+            key={`${step}-${pageFadeTick}`}
+            className={`flow-screen ${pageFadeClass}`.trim()}
+            style={{
+              '--screen-y': `${screenMotion.y}px`,
+              '--screen-fade-in': `${screenMotion.fadeIn}ms`,
+            }}
+          >
+            {renderStep(step)}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {loginOverlay ? (
         <LoveTransition

@@ -52,6 +52,7 @@ export function ContentProvider({ children }) {
   )
   const [isMusicUploading, setIsMusicUploading] = useState(false)
   const contentRef = useRef(content)
+  const persistedContentRef = useRef(content)
 
   useEffect(() => {
     contentRef.current = content
@@ -118,6 +119,7 @@ export function ContentProvider({ children }) {
   const applyLoadedContent = useCallback((remote) => {
     applySiteTheme(remote.appearance)
     contentRef.current = remote
+    persistedContentRef.current = remote
     setContent(remote)
     setIsDirty(false)
     setSyncStatus('ready')
@@ -173,6 +175,7 @@ export function ContentProvider({ children }) {
 
     try {
       await saveRemoteContent(snapshot, password)
+      persistedContentRef.current = snapshot
 
       const nextLoginPassword =
         snapshot.adminPassword && snapshot.adminPassword !== password ? snapshot.adminPassword : null
@@ -198,7 +201,7 @@ export function ContentProvider({ children }) {
   }, [])
 
   const verifyPassword = useCallback(async (password) => {
-    const expected = contentRef.current?.adminPassword || contentRef.current?.password || 'ThisIsLove'
+    const expected = persistedContentRef.current?.adminPassword || persistedContentRef.current?.password || 'ThisIsLove'
     return password === expected
   }, [])
 
@@ -313,6 +316,74 @@ export function ContentProvider({ children }) {
       }))
     },
     [patchContent],
+  )
+
+  const updateWishlistItem = useCallback(
+    (id, patch) => {
+      patchContent((prev) => ({
+        ...prev,
+        wishlist: (prev.wishlist ?? []).map((item) =>
+          item.id === id ? { ...item, ...patch } : item,
+        ),
+      }))
+    },
+    [patchContent],
+  )
+
+  const addWishlistItem = useCallback((text = '') => {
+    patchContent((prev) => {
+      const id = nextItemId(prev.wishlist ?? [])
+      return {
+        ...prev,
+        wishlist: [
+          ...(prev.wishlist ?? []),
+          { id, text, completed: false },
+        ],
+      }
+    })
+  }, [patchContent])
+
+  const removeWishlistItem = useCallback(
+    (id) => {
+      patchContent((prev) => ({
+        ...prev,
+        wishlist: (prev.wishlist ?? []).filter((item) => item.id !== id),
+      }))
+    },
+    [patchContent],
+  )
+
+  const toggleWishlistItem = useCallback(
+    (id) => {
+      let updated
+      setContent((prev) => {
+        const nextList = (prev.wishlist ?? []).map((item) =>
+          item.id === id ? { ...item, completed: !item.completed } : item
+        )
+        const next = { ...prev, wishlist: nextList }
+        contentRef.current = next
+        updated = next
+        return next
+      })
+      setIsDirty(true)
+
+      const pass =
+        sessionStorage.getItem('romantic-site-visitor-password') ||
+        sessionStorage.getItem('romantic-site-admin-password') ||
+        ''
+
+      if (pass && isSupabaseConfigured) {
+        saveRemoteContent(updated, pass)
+          .then(() => {
+            setIsDirty(false)
+            setSyncStatus('ready')
+          })
+          .catch((err) => {
+            console.error('Failed to auto-sync wishlist toggle:', err)
+          })
+      }
+    },
+    [isSupabaseConfigured],
   )
 
 
@@ -493,6 +564,10 @@ export function ContentProvider({ children }) {
       updateGalleryItem,
       addGalleryItem,
       removeGalleryItem,
+      updateWishlistItem,
+      addWishlistItem,
+      removeWishlistItem,
+      toggleWishlistItem,
       uploadMemoryImage,
       uploadGalleryImage,
       uploadMusic,
@@ -524,6 +599,10 @@ export function ContentProvider({ children }) {
       updateGalleryItem,
       addGalleryItem,
       removeGalleryItem,
+      updateWishlistItem,
+      addWishlistItem,
+      removeWishlistItem,
+      toggleWishlistItem,
       uploadMemoryImage,
       uploadGalleryImage,
       uploadMusic,

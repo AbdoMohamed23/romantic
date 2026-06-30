@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { Sparkles, X } from 'lucide-react'
 import BackButton from './BackButton'
 import MusicPlayer from './MusicPlayer'
 import { useMusic } from '../context/MusicContext'
@@ -8,6 +9,9 @@ export default function RomanticShell({
   showMusic = false,
   showBack = false,
   onBack,
+  showWishlistToggle = false,
+  onWishlistToggle,
+  isWishlistOpen = false,
 }) {
   const { tryWelcomeMusicStart } = useMusic()
 
@@ -19,13 +23,28 @@ export default function RomanticShell({
 
   return (
     <div className="relative min-h-dvh overflow-x-hidden">
-      {showBack ? (
+      {(showBack || showWishlistToggle) ? (
         <div
           className="pointer-events-none fixed inset-x-0 z-40 flex justify-center px-5 sm:px-6"
           style={{ top: 'max(0.75rem, env(safe-area-inset-top))' }}
         >
-          <div className="flow-screen pointer-events-auto flex w-full justify-start">
-            <BackButton onClick={onBack} />
+          <div className="flow-screen pointer-events-auto flex w-full justify-between items-center">
+            {showBack ? (
+              <BackButton onClick={onBack} />
+            ) : (
+              <div />
+            )}
+
+            {showWishlistToggle ? (
+              <button
+                type="button"
+                onClick={onWishlistToggle}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/75 backdrop-blur-md border border-white/80 text-rose-600 shadow-md hover:bg-white hover:text-rose-700 transition-all active:scale-95"
+                title={isWishlistOpen ? "إغلاق قائمة الأمنيات" : "قائمة الأمنيات"}
+              >
+                {isWishlistOpen ? <X size={20} /> : <Sparkles size={20} />}
+              </button>
+            ) : null}
           </div>
         </div>
       ) : null}

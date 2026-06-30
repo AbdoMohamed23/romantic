@@ -71,6 +71,7 @@ export function mergeContent(stored) {
     }),
     memories: stored.memories ?? [],
     galleryItems: resolveGalleryItems(stored),
+    wishlist: Array.isArray(stored.wishlist) ? stored.wishlist : defaultContent.wishlist,
   }
 }
 
