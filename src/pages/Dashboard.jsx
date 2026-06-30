@@ -184,21 +184,6 @@ export default function Dashboard() {
     await loadFromDatabase()
   }
 
-  useEffect(() => {
-    if (!isAdmin || !adminPassword || isLoading || !isSupabaseConfigured) return
-
-    let cancelled = false
-
-    verifyPassword(adminPassword).then((valid) => {
-      if (!cancelled && !valid) {
-        adminLogout()
-      }
-    })
-
-    return () => {
-      cancelled = true
-    }
-  }, [isAdmin, adminPassword, isLoading, isSupabaseConfigured, verifyPassword, adminLogout])
 
   const handleSave = async () => {
     if (!adminPassword) {
