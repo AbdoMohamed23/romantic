@@ -11,6 +11,8 @@ import Welcome from '../pages/Welcome'
 import HeartExplosionTransition from './HeartExplosionTransition'
 import LoveTransition from './LoveTransition'
 import RomanticShell from './RomanticShell'
+import ContentLoadingHearts from './ContentLoadingHearts'
+import { useContent } from '../context/ContentContext'
 
 const STEPS = ['enter', 'welcome', 'story', 'gallery', 'final']
 const { skipIntroKey } = config.auth
@@ -31,6 +33,7 @@ function shouldSkipLoginIntro() {
 }
 
 export default function Home() {
+  const { isLoading } = useContent()
   const { isAuthenticated, login } = useAuth()
   const { requestMusicStart, playMusic } = useMusic()
   const [step, setStep] = useState(() => (isAuthenticated ? 'welcome' : 'enter'))
@@ -41,6 +44,10 @@ export default function Home() {
   const pendingStepRef = useRef(null)
 
   const isTransitioning = loginOverlay || explosionTarget !== null
+
+  if (isLoading) {
+    return <ContentLoadingHearts />
+  }
 
   const canGoBack =
     isAuthenticated && Boolean(PREVIOUS_STEP[step]) && !isTransitioning
