@@ -83,10 +83,20 @@ export async function saveRemoteContent(content, password) {
   }
 
   const payload = stripHeavyFields(content)
-  const { error } = await supabase.rpc('save_site_content', {
+  let { error } = await supabase.rpc('save_site_content', {
     p_password: password,
     p_content: payload,
   })
+
+  // Fallback: If the DB RPC hasn't been updated with adminPassword support,
+  // it will reject the admin password but accept the visitor password.
+  if (error && error.message?.includes('invalid_password') && content.password && content.password !== password) {
+    const retryResult = await supabase.rpc('save_site_content', {
+      p_password: content.password,
+      p_content: payload,
+    })
+    error = retryResult.error
+  }
 
   if (error) {
     if (error.message?.includes('invalid_password')) {
