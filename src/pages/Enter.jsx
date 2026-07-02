@@ -98,7 +98,7 @@ export default function Enter({ onLogin }) {
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex w-full items-center justify-center rounded-t-xl border-b-2 border-rose-400 border-t-0 border-l-0 border-r-0 bg-transparent px-4 py-3.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50/50 hover:border-rose-500 active:scale-[0.98] disabled:opacity-70"
+                className="flex w-full items-center justify-center rounded-t-xl border-b-2 border-rose-400 border-t-0 border-l-0 border-r-0 bg-transparent px-4 pt-3.5 pb-1 text-sm font-semibold text-rose-600 transition hover:bg-rose-50/50 hover:border-rose-500 active:scale-[0.98] disabled:opacity-70"
               >
                 {submitting ? 'جاري التحقق...' : content.login.button}
               </button>

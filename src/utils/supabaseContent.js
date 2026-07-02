@@ -28,13 +28,18 @@ function stripUrlField(value) {
 }
 
 function stripHeavyFields(content) {
+  const { gallery, ...rest } = content
+  const strippedGallery = gallery ? { ...gallery } : {}
+  delete strippedGallery.finalButton
+
   return {
-    ...content,
+    ...rest,
+    gallery: strippedGallery,
     music: {
-      ...content.music,
-      src: stripUrlField(content.music.src),
+      ...rest.music,
+      src: stripUrlField(rest.music.src),
     },
-    memories: content.memories.map((memory) => ({
+    memories: rest.memories.map((memory) => ({
       ...memory,
       image: stripUrlField(memory.image),
     })),
@@ -165,7 +170,10 @@ export async function uploadAsset(file, folder) {
     ? await compressImageFile(file)
     : file
 
-  const extension = prepared.name.split('.').pop()?.toLowerCase() || 'bin'
+  let extension = prepared.name.split('.').pop()?.toLowerCase() || 'bin'
+  if (folder === 'music') {
+    extension = 'mp3'
+  }
   const path = `${folder}/${crypto.randomUUID()}.${extension}`
   let contentType = guessMimeType(prepared)
 

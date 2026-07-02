@@ -166,7 +166,7 @@ export default function Dashboard() {
     uploadMusic,
     removeMusic,
     updateMusicTrackTitle,
-    isMusicUploading,
+    musicUploadingIndex,
     saveChanges,
     loadFromDatabase,
     verifyPassword,
@@ -408,12 +408,12 @@ export default function Dashboard() {
                         </p>
                       ) : null}
                       <label
-                        className={`relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-4 text-xs transition ${isMusicUploading
+                        className={`relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-4 text-xs transition ${musicUploadingIndex !== null
                             ? 'border-rose-300 bg-rose-50 text-rose-500'
                             : 'border-rose-200 bg-rose-50/50 text-rose-500 hover:border-rose-300'
-                          } ${isMusicUploading ? 'pointer-events-none opacity-80' : ''}`}
+                          } ${musicUploadingIndex !== null ? 'pointer-events-none opacity-80' : ''}`}
                       >
-                        {isMusicUploading ? (
+                        {musicUploadingIndex === idx ? (
                           <>
                             <span className="h-4 w-4 animate-spin rounded-full border-2 border-rose-200 border-t-rose-500" />
                             <span className="font-medium">جاري الرفع...</span>
@@ -428,7 +428,7 @@ export default function Dashboard() {
                           type="file"
                           accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac,.webm,.opus,.mpeg,.mpga"
                           className="hidden"
-                          disabled={isMusicUploading}
+                          disabled={musicUploadingIndex !== null}
                           onChange={(e) => {
                             const file = e.target.files?.[0]
                             if (file) {
@@ -688,14 +688,6 @@ export default function Dashboard() {
                   value={content.gallery.title}
                   onChange={(v) => {
                     updateField('gallery', 'title', v)
-                  }}
-                />
-              </Field>
-              <Field label="زر التالي">
-                <TextInput
-                  value={content.gallery.finalButton}
-                  onChange={(v) => {
-                    updateField('gallery', 'finalButton', v)
                   }}
                 />
               </Field>

@@ -50,7 +50,7 @@ export function ContentProvider({ children }) {
   const [syncError, setSyncError] = useState(
     isSupabaseConfigured ? '' : 'تعذّر الاتصال بالخادم',
   )
-  const [isMusicUploading, setIsMusicUploading] = useState(false)
+  const [musicUploadingIndex, setMusicUploadingIndex] = useState(null)
   const contentRef = useRef(content)
   const persistedContentRef = useRef(content)
 
@@ -454,7 +454,7 @@ export function ContentProvider({ children }) {
         throw new Error('الملف لازم يكون صوت (mp3, m4a, wav, ogg, flac...)')
       }
 
-      setIsMusicUploading(true)
+      setMusicUploadingIndex(index)
       setSyncError('')
 
       try {
@@ -490,7 +490,7 @@ export function ContentProvider({ children }) {
         setSyncError(message)
         throw new Error(message)
       } finally {
-        setIsMusicUploading(false)
+        setMusicUploadingIndex(null)
       }
     },
     [patchContent, getInitialTracks],
@@ -558,7 +558,7 @@ export function ContentProvider({ children }) {
       syncStatus,
       syncError,
       isSupabaseConfigured,
-      isMusicUploading,
+      musicUploadingIndex,
       updateField,
       updateNestedField,
       updateRoot,
@@ -593,7 +593,7 @@ export function ContentProvider({ children }) {
       isDirty,
       syncStatus,
       syncError,
-      isMusicUploading,
+      musicUploadingIndex,
       updateField,
       updateNestedField,
       updateRoot,
