@@ -153,13 +153,7 @@ function guessMimeType(file) {
 }
 
 export function isAudioFile(file) {
-  if (!file) return false
-  if (file.type.startsWith('audio/')) return true
-
-  const extension = file.name.split('.').pop()?.toLowerCase()
-  return /^(mp3|mpeg|mpga|ogg|wav|wave|m4a|mp4|aac|flac|webm|weba|opus|amr|mid|midi)$/.test(
-    extension || '',
-  )
+  return true
 }
 
 export async function uploadAsset(file, folder) {
