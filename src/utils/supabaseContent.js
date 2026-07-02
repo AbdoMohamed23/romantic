@@ -181,7 +181,16 @@ export async function uploadAsset(file, folder) {
     contentType = 'audio/mpeg'
   }
 
-  const { error } = await supabase.storage.from(ASSETS_BUCKET).upload(path, prepared, {
+  let uploadFile = prepared
+  if (contentType) {
+    try {
+      uploadFile = new File([prepared], prepared.name, { type: contentType })
+    } catch (e) {
+      console.warn('Failed to override File type, uploading original:', e)
+    }
+  }
+
+  const { error } = await supabase.storage.from(ASSETS_BUCKET).upload(path, uploadFile, {
     cacheControl: '31536000',
     upsert: true,
     contentType,

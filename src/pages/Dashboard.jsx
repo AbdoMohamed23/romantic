@@ -408,7 +408,7 @@ export default function Dashboard() {
                         </p>
                       ) : null}
                       <label
-                        className={`relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-4 text-xs transition ${musicUploadingIndex !== null
+                        className={`relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-4 text-xs transition ${musicUploadingIndex === idx
                             ? 'border-rose-300 bg-rose-50 text-rose-500'
                             : 'border-rose-200 bg-rose-50/50 text-rose-500 hover:border-rose-300'
                           } ${musicUploadingIndex !== null ? 'pointer-events-none opacity-80' : ''}`}
