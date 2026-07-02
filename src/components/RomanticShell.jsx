@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Sparkles, X } from 'lucide-react'
+import { Sparkles, X, Home, Image } from 'lucide-react'
 import BackButton from './BackButton'
 import MusicPlayer from './MusicPlayer'
 import { useMusic } from '../context/MusicContext'
@@ -12,6 +12,11 @@ export default function RomanticShell({
   showWishlistToggle = false,
   onWishlistToggle,
   isWishlistOpen = false,
+  showGalleryToggle = false,
+  onGalleryToggle,
+  isGalleryOpen = false,
+  showHome = false,
+  onHomeClick,
 }) {
   const { tryWelcomeMusicStart } = useMusic()
 
@@ -23,7 +28,7 @@ export default function RomanticShell({
 
   return (
     <div className="relative min-h-dvh overflow-x-hidden">
-      {(showBack || showWishlistToggle) ? (
+      {(showBack || showWishlistToggle || showGalleryToggle || showHome) ? (
         <div
           className="pointer-events-none fixed inset-x-0 z-40 flex justify-center px-5 sm:px-6"
           style={{ top: 'max(0.75rem, env(safe-area-inset-top))' }}
@@ -35,16 +40,40 @@ export default function RomanticShell({
               <div />
             )}
 
-            {showWishlistToggle ? (
-              <button
-                type="button"
-                onClick={onWishlistToggle}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/75 backdrop-blur-md border border-white/80 text-rose-600 shadow-md hover:bg-white hover:text-rose-700 transition-all active:scale-95"
-                title={isWishlistOpen ? "إغلاق قائمة الأمنيات" : "قائمة الأمنيات"}
-              >
-                {isWishlistOpen ? <X size={20} /> : <Sparkles size={20} />}
-              </button>
-            ) : null}
+            <div className="flex items-center gap-2">
+              {showHome ? (
+                <button
+                  type="button"
+                  onClick={onHomeClick}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/75 backdrop-blur-md border border-white/80 text-rose-600 shadow-md hover:bg-white hover:text-rose-700 transition-all active:scale-95"
+                  title="الرجوع للترحيب"
+                >
+                  <Home size={20} />
+                </button>
+              ) : null}
+
+              {showGalleryToggle ? (
+                <button
+                  type="button"
+                  onClick={onGalleryToggle}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/75 backdrop-blur-md border border-white/80 text-rose-600 shadow-md hover:bg-white hover:text-rose-700 transition-all active:scale-95"
+                  title={isGalleryOpen ? "إغلاق ذكرياتنا" : "ذكرياتنا"}
+                >
+                  {isGalleryOpen ? <X size={20} /> : <Image size={20} />}
+                </button>
+              ) : null}
+
+              {showWishlistToggle ? (
+                <button
+                  type="button"
+                  onClick={onWishlistToggle}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/75 backdrop-blur-md border border-white/80 text-rose-600 shadow-md hover:bg-white hover:text-rose-700 transition-all active:scale-95"
+                  title={isWishlistOpen ? "إغلاق قائمة الأمنيات" : "قائمة الأمنيات"}
+                >
+                  {isWishlistOpen ? <X size={20} /> : <Sparkles size={20} />}
+                </button>
+              ) : null}
+            </div>
           </div>
         </div>
       ) : null}

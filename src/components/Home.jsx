@@ -1,4 +1,4 @@
-import { startTransition, useCallback, useRef, useState } from 'react'
+import { startTransition, useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { config } from '../data/config'
 import { useAuth } from '../hooks/useAuth'
@@ -14,14 +14,13 @@ import LoveTransition from './LoveTransition'
 import RomanticShell from './RomanticShell'
 import Wishlist from './Wishlist'
 
-const STEPS = ['enter', 'welcome', 'story', 'gallery', 'final']
+const STEPS = ['enter', 'welcome', 'story', 'final']
 const { skipIntroKey } = config.auth
 const screenMotion = getScreenMotion()
 
 const PREVIOUS_STEP = {
   story: 'welcome',
-  gallery: 'story',
-  final: 'gallery',
+  final: 'story',
 }
 
 function prefersReducedMotion() {
@@ -41,12 +40,22 @@ export default function Home() {
   const [explosionTarget, setExplosionTarget] = useState(null)
   const [pageFadeTick, setPageFadeTick] = useState(0)
   const [showWishlist, setShowWishlist] = useState(false)
+  const [showGallery, setShowGallery] = useState(false)
   const pendingStepRef = useRef(null)
 
   const isTransitioning = loginOverlay || explosionTarget !== null
 
   const canGoBack =
     isAuthenticated && Boolean(PREVIOUS_STEP[step]) && !isTransitioning
+
+  const showHome =
+    isAuthenticated &&
+    !isTransitioning &&
+    (step !== 'welcome' || showWishlist || showGallery)
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  }, [step, showWishlist, showGallery])
 
   const triggerPageFade = useCallback(() => {
     setPageFadeTick((tick) => tick + 1)
@@ -74,6 +83,23 @@ export default function Home() {
     const previous = PREVIOUS_STEP[step]
     if (previous) navigateWithExplosion(previous)
   }, [navigateWithExplosion, step])
+
+  const handleGalleryToggle = useCallback(() => {
+    setShowGallery((prev) => !prev)
+    setShowWishlist(false)
+  }, [])
+
+  const handleWishlistToggle = useCallback(() => {
+    setShowWishlist((prev) => !prev)
+    setShowGallery(false)
+  }, [])
+
+  const handleHomeClick = useCallback(() => {
+    setStep('welcome')
+    setShowWishlist(false)
+    setShowGallery(false)
+    triggerPageFade()
+  }, [triggerPageFade])
 
   const handleLogin = useCallback(() => {
     if (shouldSkipLoginIntro()) {
@@ -127,9 +153,7 @@ export default function Home() {
       case 'welcome':
         return <Welcome onNext={() => navigateWithExplosion('story')} />
       case 'story':
-        return <Story onNext={() => navigateWithExplosion('gallery')} />
-      case 'gallery':
-        return <Gallery onNext={() => navigateWithExplosion('final')} />
+        return <Story onNext={() => navigateWithExplosion('final')} />
       case 'final':
         return <Final />
       default:
@@ -141,16 +165,21 @@ export default function Home() {
     isAuthenticated &&
     (step !== 'enter' || loginOverlay)
 
-  const pageFadeClass = pageFadeTick > 0 ? 'screen-fade-in' : ''
+  const pageFadeClass = 'screen-fade-in'
 
   return (
     <RomanticShell
       showMusic={showMusic}
-      showBack={showWishlist ? false : canGoBack}
+      showBack={(showWishlist || showGallery) ? false : canGoBack}
       onBack={handleBack}
       showWishlistToggle={isAuthenticated && (step !== 'enter' || loginOverlay)}
-      onWishlistToggle={() => setShowWishlist((prev) => !prev)}
+      onWishlistToggle={handleWishlistToggle}
       isWishlistOpen={showWishlist}
+      showGalleryToggle={isAuthenticated && (step !== 'enter' || loginOverlay)}
+      onGalleryToggle={handleGalleryToggle}
+      isGalleryOpen={showGallery}
+      showHome={showHome}
+      onHomeClick={handleHomeClick}
     >
       <AnimatePresence mode="wait">
         {showWishlist ? (
@@ -163,6 +192,17 @@ export default function Home() {
             className="w-full flex-1 flex flex-col justify-start"
           >
             <Wishlist />
+          </motion.div>
+        ) : showGallery ? (
+          <motion.div
+            key="gallery-view"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.25 }}
+            className="w-full flex-1 flex flex-col justify-start"
+          >
+            <Gallery onNext={() => setShowGallery(false)} showNext={false} />
           </motion.div>
         ) : (
           <motion.div

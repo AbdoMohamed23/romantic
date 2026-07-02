@@ -7,7 +7,7 @@ import NextButton from '../components/NextButton'
 import { RevealGroup, RevealItem } from '../components/Reveal'
 import { useContent } from '../context/ContentContext'
 
-export default function Gallery({ onNext }) {
+export default function Gallery({ onNext, showNext = true }) {
   const { content } = useContent()
   const { gallery, galleryItems = [] } = content
   const [lightboxIndex, setLightboxIndex] = useState(null)
@@ -28,7 +28,7 @@ export default function Gallery({ onNext }) {
   return (
     <FlowPage variant="flow" className="pb-4">
       <RevealItem as="header" className="mb-6 w-full">
-        <p className="text-xs font-medium text-rose-400">{gallery.eyebrow}</p>
+        <p className="text-sm font-medium tracking-wide text-rose-400">{gallery.eyebrow}</p>
         <h1 className="font-display mt-2 text-3xl font-bold text-rose-900">
           {gallery.title}
         </h1>
@@ -53,9 +53,11 @@ export default function Gallery({ onNext }) {
         </RevealItem>
       )}
 
-      <RevealItem className="mt-10 w-full">
-        <NextButton onClick={onNext}>{gallery.finalButton}</NextButton>
-      </RevealItem>
+      {showNext && (
+        <RevealItem className="mt-10 w-full">
+          <NextButton onClick={onNext}>{gallery.finalButton}</NextButton>
+        </RevealItem>
+      )}
 
       <AnimatePresence>
         {lightboxIndex !== null && items[lightboxIndex] ? (

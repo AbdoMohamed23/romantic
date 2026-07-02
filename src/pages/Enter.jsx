@@ -52,7 +52,7 @@ export default function Enter({ onLogin }) {
         <RevealItem>
           <div className="enter-card theme-shadow-enter rounded-4xl">
             <div className="enter-card__header px-8 py-8 text-center">
-              <p className="text-xs font-medium text-rose-400">
+              <p className="text-sm font-medium tracking-wide text-rose-400">
                 {content.login.eyebrow}
               </p>
               <h1 className="font-display mt-3 text-3xl font-semibold text-rose-800 sm:text-4xl">
@@ -98,7 +98,7 @@ export default function Enter({ onLogin }) {
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-rose-400 to-pink-400 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-rose-200/80 transition hover:from-rose-500 hover:to-pink-500 active:scale-[0.98] disabled:opacity-70"
+                className="flex w-full items-center justify-center rounded-t-xl border-b-2 border-rose-400 border-t-0 border-l-0 border-r-0 bg-transparent px-4 py-3.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50/50 hover:border-rose-500 active:scale-[0.98] disabled:opacity-70"
               >
                 {submitting ? 'جاري التحقق...' : content.login.button}
               </button>

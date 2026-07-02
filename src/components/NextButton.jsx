@@ -8,7 +8,7 @@ export default function NextButton({
       <button
         type="button"
         onClick={onClick}
-        className="inline-flex items-center rounded-full bg-gradient-to-r from-rose-400 via-pink-400 to-rose-500 px-10 py-4 text-sm font-semibold text-white theme-shadow-button transition hover:brightness-105 active:scale-[0.98]"
+        className="inline-flex items-center rounded-t-xl border-b-2 border-rose-400 border-t-0 border-l-0 border-r-0 bg-transparent px-10 py-4 text-sm font-semibold text-rose-600 transition hover:bg-rose-50/50 hover:border-rose-500 active:scale-[0.98]"
       >
         <span className="font-sans tracking-wide">{children}</span>
       </button>

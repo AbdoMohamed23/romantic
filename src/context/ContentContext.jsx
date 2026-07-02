@@ -486,10 +486,7 @@ export function ContentProvider({ children }) {
         })
         return url
       } catch (error) {
-        const message =
-          error.message?.includes('mime') || error.message?.includes('not allowed')
-            ? 'نوع الملف غير مدعوم على السيرفر — جرّب mp3 أو wav'
-            : error.message || 'فشل رفع الأغنية'
+        const message = error.message || 'فشل رفع الأغنية'
         setSyncError(message)
         throw new Error(message)
       } finally {

@@ -12,13 +12,7 @@ export default function Final() {
     <FlowPage variant="center">
       <RevealGroup className="flex w-full flex-col items-center">
         <RevealItem>
-          <div className="heart-pulse theme-shadow-glow mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-rose-400 to-pink-500">
-            <span className="text-2xl text-white">♥</span>
-          </div>
-        </RevealItem>
-
-        <RevealItem>
-          <p className="text-xs font-medium text-rose-400">{final.eyebrow}</p>
+          <p className="text-sm font-medium tracking-wide text-rose-400">{final.eyebrow}</p>
         </RevealItem>
 
         <RevealItem>

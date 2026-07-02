@@ -170,17 +170,7 @@ export async function uploadAsset(file, folder) {
   let contentType = guessMimeType(prepared)
 
   if (folder === 'music') {
-    const allowedAudio = new Set([
-      'audio/mpeg',
-      'audio/mp3',
-      'audio/ogg',
-      'audio/wav',
-      'application/octet-stream',
-    ])
-
-    if (!allowedAudio.has(contentType)) {
-      contentType = 'application/octet-stream'
-    }
+    contentType = 'audio/mpeg'
   }
 
   const { error } = await supabase.storage.from(ASSETS_BUCKET).upload(path, prepared, {
