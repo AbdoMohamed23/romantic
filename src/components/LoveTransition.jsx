@@ -6,12 +6,13 @@ import {
   createLoveTransitionParticles,
   getLoveTransitionParticleCount,
 } from '../utils/loveTransitionParticles'
+import { useContent } from '../context/ContentContext'
 
 const { loveTransition } = config.animations
 const EXPAND_EASE = [0.16, 1, 0.3, 1]
 const REVEAL_EASE = [0.33, 0, 0.2, 1]
 
-function TransitionParticle({ particle, phase, revealDuration }) {
+function TransitionParticle({ particle, phase, revealDuration, heartSymbol }) {
   const isRevealing = phase === 'reveal'
 
   return (
@@ -60,12 +61,14 @@ function TransitionParticle({ particle, phase, revealDuration }) {
             }
       }
     >
-      ♥
+      {heartSymbol}
     </motion.span>
   )
 }
 
 export default function LoveTransition({ onCovered, onComplete, canExit }) {
+  const { content } = useContent()
+  const pushHeart = content.appearance?.pushHeart || '♥'
   const [phase, setPhase] = useState('expand')
   const onCoveredRef = useRef(onCovered)
   const onCompleteRef = useRef(onComplete)
@@ -184,6 +187,7 @@ export default function LoveTransition({ onCovered, onComplete, canExit }) {
               particle={particle}
               phase={phase}
               revealDuration={loveTransition.revealDuration}
+              heartSymbol={pushHeart}
             />
           ))}
         </div>

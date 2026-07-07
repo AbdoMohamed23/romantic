@@ -325,6 +325,32 @@ export default function Dashboard() {
               </span>
             </Field>
 
+            <Field
+              label="رمز قلب الخلفية"
+              hint="شكل القلب أو الإيموجي المستخدم في الخلفية المتحركة"
+            >
+              <TextInput
+                value={content.appearance?.backgroundHeart ?? '♥'}
+                onChange={(v) => {
+                  updateField('appearance', 'backgroundHeart', v)
+                }}
+                maxLength={5}
+              />
+            </Field>
+
+            <Field
+              label="رمز قلب الدخول والانفجار"
+              hint="شكل القلب أو الإيموجي المستخدم في شاشة الدخول والانفجارات"
+            >
+              <TextInput
+                value={content.appearance?.pushHeart ?? '♥'}
+                onChange={(v) => {
+                  updateField('appearance', 'pushHeart', v)
+                }}
+                maxLength={5}
+              />
+            </Field>
+
             <div className="flex flex-wrap gap-2">
               {['#fb7185', '#f472b6', '#e879f9', '#c084fc', '#f97316', '#38bdf8'].map(
                 (color) => (

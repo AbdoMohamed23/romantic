@@ -8,7 +8,7 @@ import {
 } from '../utils/heartVisuals'
 
 function HeartBackground({ className = '' }) {
-  useContent()
+  const { content } = useContent()
   const heartsCache = useRef({ count: 0, hearts: [] })
   const [count, setCount] = useState(() => getHeartCount())
 
@@ -69,7 +69,7 @@ function HeartBackground({ className = '' }) {
               '--heart-drift': `${heart.drift}px`,
             }}
           >
-            ♥
+            {content.appearance?.backgroundHeart || '♥'}
           </span>
         )
       })}

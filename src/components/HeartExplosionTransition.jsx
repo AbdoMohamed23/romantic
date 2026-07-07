@@ -5,10 +5,11 @@ import {
   createRisingHearts,
   getRisingHeartCount,
 } from '../utils/heartExplosionParticles'
+import { useContent } from '../context/ContentContext'
 
 const { heartExplosion } = config.animations
 
-function RisingHeart({ particle }) {
+function RisingHeart({ particle, heartSymbol }) {
   return (
     <span
       className="heart-explosion__heart heart-explosion__heart--rise pointer-events-none absolute select-none"
@@ -22,12 +23,14 @@ function RisingHeart({ particle }) {
         '--rise-opacity': particle.opacity,
       }}
     >
-      ♥
+      {heartSymbol}
     </span>
   )
 }
 
 export default function HeartExplosionTransition({ onSwap, onComplete }) {
+  const { content } = useContent()
+  const pushHeart = content.appearance?.pushHeart || '♥'
   const onSwapRef = useRef(onSwap)
   const onCompleteRef = useRef(onComplete)
   const swappedRef = useRef(false)
@@ -72,7 +75,7 @@ export default function HeartExplosionTransition({ onSwap, onComplete }) {
     >
       <div className="heart-explosion__stage">
         {particles.map((particle) => (
-          <RisingHeart key={particle.id} particle={particle} />
+          <RisingHeart key={particle.id} particle={particle} heartSymbol={pushHeart} />
         ))}
       </div>
 

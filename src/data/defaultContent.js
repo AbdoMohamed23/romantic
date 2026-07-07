@@ -8,6 +8,8 @@ export const defaultContent = {
     primaryColor: '#fb7185',
     backgroundHeartColor: '#be123c',
     heartOpacity: 0.65,
+    backgroundHeart: '♥',
+    pushHeart: '♥',
   },
   dates: {
     relationshipStart: '',

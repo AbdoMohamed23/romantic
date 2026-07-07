@@ -15,6 +15,16 @@ INSERT INTO public.site_content (id, data)
 VALUES (1, '{}'::jsonb)
 ON CONFLICT (id) DO NOTHING;
 
+-- تحديث لتهيئة وإضافة قيم القلوب الافتراضية لقاعدة البيانات الحالية
+UPDATE public.site_content
+SET data = jsonb_set(
+  data,
+  '{appearance}',
+  COALESCE(data->'appearance', '{}'::jsonb) 
+    || jsonb_build_object('backgroundHeart', '♥', 'pushHeart', '♥')
+)
+WHERE id = 1;
+
 ALTER TABLE public.site_content ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "site_content_public_read" ON public.site_content;
@@ -214,7 +224,9 @@ SET data = jsonb_build_object(
   'appearance', jsonb_build_object(
     'primaryColor',        '#fb7185',
     'backgroundHeartColor','#be123c',
-    'heartOpacity',        0.65
+    'heartOpacity',        0.65,
+    'backgroundHeart',     '♥',
+    'pushHeart',           '♥'
   ),
   'login', jsonb_build_object(
     'eyebrow', '', 'title', '', 'subtitle', '',
