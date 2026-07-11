@@ -11,7 +11,7 @@ export default function Welcome({ onNext }) {
       <div className="flex w-full flex-col items-center">
         <p className="text-sm font-medium tracking-wide text-rose-400">{welcome.eyebrow}</p>
 
-        <h1 className="font-display mt-3 text-4xl font-bold text-rose-900">
+        <h1 className="font-display mt-3 text-2xl font-bold text-rose-900">
           {welcome.title}
         </h1>
 
